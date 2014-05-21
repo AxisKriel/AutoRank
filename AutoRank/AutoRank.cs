@@ -55,7 +55,7 @@ namespace AutoRank
 
 			ServerApi.Hooks.GameInitialize.Register(this, OnInitialize);
 
-			Commands.ChatCommands.Add(new Command(RankCheck, "rank"));
+			Commands.ChatCommands.Add(new Command(RankCheck, cfg.RankCmdAlias));
 			Commands.ChatCommands.Add(new Command("autorank.reload", Reload, "rank-reload"));
 		}
 
@@ -90,10 +90,10 @@ namespace AutoRank
 				if (rank != null && rank.FindNext() != null)
 				{
 					var newrank = rank.FindNext();
-					if (plr.BankAccount.Balance > newrank.Cost())
+					if (plr.BankAccount.Balance > newrank.Cost)
 					{
-						plr.BankAccount.Balance -= newrank.Cost();
-						plr.TSPlayer.Group = newrank.Group();
+						plr.BankAccount.Balance -= newrank.Cost;
+						plr.TSPlayer.Group = newrank.Group;
 						plr.TSPlayer.SendSuccessMessage(MsgParser.Parse(cfg.RankUpMessage, plr.TSPlayer));
 					}
 				}
@@ -109,13 +109,8 @@ namespace AutoRank
 				return;
 			}
 
-			var ranktree = Utils.MakeRankTree(rank);
-			if (ranktree.FindIndex(r => r.Equals(rank)) == ranktree.Count - 1)
-			{
-				
-			}
-			args.Player.SendInfoMessage("Rank Line: " + rank.RankLine);
-			args.Player.SendInfoMessage(MsgParser.ParseRankTree(ranktree, ranktree.FindIndex(r => r.Equals(rank)),
+			var ranktree = Utils.MakeRankTree2(rank);
+			args.Player.SendInfoMessage(MsgParser.ParseRankTree(ranktree, rank.GetIndex(ranktree),
   				SEconomyPlugin.EconomyPlayers.Find(e => e.TSPlayer.Equals(args.Player))));
 		}
 

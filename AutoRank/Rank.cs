@@ -15,36 +15,42 @@ namespace AutoRank
 		public string parentgroup { get; set; }
 		public string group { get; set; }
 		public string cost { get; set; }
+		[Obsolete("Replaced by the auto rank tree gen.")]
 		public string RankLine { get; set; }
+
+		public int GetIndex(List<Rank> list)
+		{
+			return list.FindIndex(r => r == this);
+		}
 
 		public Rank(string Name)
 		{
 			this.name = Name;
 		}
 
-		public Group Group()
+		public Group Group
 		{
-			return TShock.Groups.GetGroupByName(group);
+			get { return TShock.Groups.GetGroupByName(group); }
 		}
 
-		public Group ParentGroup()
+		public Group ParentGroup
 		{
-			return TShock.Groups.GetGroupByName(parentgroup);
+			get { return TShock.Groups.GetGroupByName(parentgroup); }
 		}
 
-		public Money Cost()
+		public Money Cost
 		{
-			return Money.Parse(cost);
+			get { return Money.Parse(cost); }
 		}
 
 		public Rank FindNext()
 		{
-			return Config.config.Ranks.FirstOrDefault(r => r.ParentGroup() == this.Group());
+			return Config.config.Ranks.FirstOrDefault(r => r.ParentGroup == this.Group);
 		}
 
-		public bool IsGroup()
+		public bool GroupExists()
 		{
-			if (this.Group() == null)
+			if (this.Group == null)
 				return false;
 			else
 				return true;

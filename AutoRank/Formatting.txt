@@ -1,0 +1,21 @@
+﻿Formatting wildcards to be used with the config custom strings.
+
+RankUpMessage avaliable wildcards:
+%NAME% - The new rank's name.
+%GROUP% - The player's new Group Name (From TSHOCK)
+%PARENT% - The player's new Group ParentName [I. E. the rank they previously had] (From TSHOCK)
+
+RankCmdMsg & MaxRankMsg available wildcards:
+%CUR_<branch>% - The current rank. Must use one of the following branches:
+					-> %CUR_INDEX% - The index in the rank tree. [Natural-based: starts at 1]
+					-> %CUR_NAME% - The name attribute.
+					-> %CUR_GROUP% - The TShock group's name.
+					-> %CUR_PARENT% - The parentgroup attribute.
+%NEXT_<branch>% - The next rank. Must use one of the following branches:
+					-> %NEXT_INDEX% - The index in the rank tree. [Natural-based: starts at 1]
+					-> %NEXT_NAME% - The name attribute.
+					-> %NEXT_GROUP% - The TShock group's name.
+					[No need for %NEXT_PARENT% since that's pretty much '%CUR_NAME%']
+%MAX% - The number of ranks in the rank tree.
+
+If you have any wildcard that you'd like to see added, please submit your request as feedback in the OP.

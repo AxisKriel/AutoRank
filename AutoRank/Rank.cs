@@ -15,8 +15,8 @@ namespace AutoRank
 		public string parentgroup { get; set; }
 		public string group { get; set; }
 		public string cost { get; set; }
-		[Obsolete("Replaced by the auto rank tree gen.")]
-		public string RankLine { get; set; }
+		//[Obsolete("Replaced by the auto rank tree gen.")]
+		//public string RankLine { get; set; }
 
 		public int GetIndex(List<Rank> list)
 		{
@@ -28,29 +28,29 @@ namespace AutoRank
 			this.name = Name;
 		}
 
-		public Group Group
+		public Group Group()
 		{
-			get { return TShock.Groups.GetGroupByName(group); }
+			return TShock.Groups.GetGroupByName(group);
 		}
 
-		public Group ParentGroup
+		public Group ParentGroup()
 		{
-			get { return TShock.Groups.GetGroupByName(parentgroup); }
+			return TShock.Groups.GetGroupByName(parentgroup);
 		}
 
-		public Money Cost
+		public Money Cost()
 		{
-			get { return Money.Parse(cost); }
+			return Money.Parse(cost);
 		}
 
 		public Rank FindNext()
 		{
-			return Config.config.Ranks.FirstOrDefault(r => r.ParentGroup == this.Group);
+			return Config.config.Ranks.FirstOrDefault(r => r.ParentGroup() == this.Group());
 		}
 
 		public bool GroupExists()
 		{
-			if (this.Group == null)
+			if (this.Group() == null)
 				return false;
 			else
 				return true;

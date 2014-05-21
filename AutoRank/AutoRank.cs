@@ -72,7 +72,7 @@ namespace AutoRank
 		public AutoRank(Terraria.Main game)
 			: base(game)
 		{
-			Order = 1;
+			Order = 20001;
 		}
 
 		void OnInitialize(EventArgs e)
@@ -90,10 +90,10 @@ namespace AutoRank
 				if (rank != null && rank.FindNext() != null)
 				{
 					var newrank = rank.FindNext();
-					if (plr.BankAccount.Balance > newrank.Cost)
+					if (plr.BankAccount.Balance > newrank.Cost())
 					{
-						plr.BankAccount.Balance -= newrank.Cost;
-						plr.TSPlayer.Group = newrank.Group;
+						plr.BankAccount.Balance -= newrank.Cost();
+						plr.TSPlayer.Group = newrank.Group();
 						plr.TSPlayer.SendSuccessMessage(MsgParser.Parse(cfg.RankUpMessage, plr.TSPlayer));
 					}
 				}

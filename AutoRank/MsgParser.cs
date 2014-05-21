@@ -49,6 +49,9 @@ namespace AutoRank
 			if (parsed.Contains("%CUR_PARENT%"))
 				parsed = parsed.Replace("%CUR_PARENT%", rank.parentgroup);
 
+			if (parsed.Contains("%CUR_COST%"))
+				parsed = parsed.Replace("%CUR_COST%", rank.Cost().ToLongString(true));
+
 			if (parsed.Contains("%MAX%"))
 				parsed = parsed.Replace("%MAX%", tree.Count.ToString());
 
@@ -60,6 +63,9 @@ namespace AutoRank
 
 			if (parsed.Contains("%NEXT_GROUP%"))
 				parsed = parsed.Replace("%NEXT_GROUP%", rank.FindNext().group);
+
+			if (parsed.Contains("%NEXT_COST%"))
+				parsed = parsed.Replace("%NEXT_COST%", rank.FindNext().Cost().ToLongString(true));
 
 			return parsed;
 		}

@@ -16,7 +16,7 @@ namespace AutoRank
 		/// <returns></returns>
 		public static Rank FindRank(this TSPlayer ply)
 		{
-			return Config.config.Ranks.FirstOrDefault(r => r.Group == ply.Group);
+			return Config.config.Ranks.FirstOrDefault(r => r.Group() == ply.Group);
 		}
 
 		//public static List<Rank> MakeRankTree(Rank rank)
@@ -34,7 +34,7 @@ namespace AutoRank
 
 			for (int i = rank.GetIndex(Config.config.Ranks); i > 0; i--)
 			{
-				if (ranks[i].Group == rank.ParentGroup)
+				if (ranks[i].Group() == rank.ParentGroup())
 				{
 					rank = ranks[i];
 				}

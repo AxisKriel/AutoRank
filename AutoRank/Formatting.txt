@@ -19,5 +19,6 @@ RankCmdMsg & MaxRankMsg available wildcards:
 					[No need for %NEXT_PARENT% since that's pretty much '%CUR_NAME%']
 					-> %NEXT_COST% - The cost attribute parsed as SEconomy Money.ToLongString(true).
 %MAX% - The number of ranks in the rank tree.
+%CURLEFT% - The currency left to reach the next rank (NextRank's cost - Player Bank Account's balance)
 
 If you have any wildcard that you'd like to see added, please submit your request as feedback in the OP.

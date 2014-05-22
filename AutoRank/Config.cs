@@ -16,7 +16,7 @@ namespace AutoRank
 		public static Cfg config;
 		public class Cfg
 		{
-			public int UpdateInterval = 1000;
+			//public int UpdateInterval = 1000;
 			public string RankUpMessage = "[AutoRank] You've been auto-ranked to %GROUP%!";
 			public string RankCmdAlias = "rank";
 			public string RankCmdMsg = "[%CUR_INDEX%/%MAX%] Current Rank: %CUR_NAME%. Next rank in %NEXT_COST%";

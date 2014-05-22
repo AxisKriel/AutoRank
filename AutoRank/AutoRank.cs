@@ -14,7 +14,7 @@ namespace AutoRank
 	[ApiVersion(1, 16)]
     public class AutoRank : TerrariaPlugin
     {
-		Timer UpdateTimer;
+		//Timer UpdateTimer;
 		Config.Cfg cfg;
 
 		public override Version Version
@@ -64,7 +64,7 @@ namespace AutoRank
 			if (disposing)
 			{
 				ServerApi.Hooks.GameInitialize.Deregister(this, OnInitialize);
-				UpdateTimer.Elapsed -= UpdateTimerTick;
+				//UpdateTimer.Elapsed -= UpdateTimerTick;
 			}
 			base.Dispose(disposing);
 		}
@@ -77,27 +77,44 @@ namespace AutoRank
 
 		void OnInitialize(EventArgs e)
 		{
-			UpdateTimer = new Timer(cfg.UpdateInterval);
-			UpdateTimer.Elapsed += UpdateTimerTick;
-			UpdateTimer.Start();
+			//UpdateTimer = new Timer(cfg.UpdateInterval);
+			//UpdateTimer.Elapsed += UpdateTimerTick;
+			//UpdateTimer.Start();
+			SEconomyPlugin.RunningJournal.BankTransferCompleted += BankTransferCompleted;
 		}
 
-		void UpdateTimerTick(object sender, ElapsedEventArgs e)
+		void BankTransferCompleted(object sender, Wolfje.Plugins.SEconomy.Journal.BankTransferEventArgs args)
 		{
-			foreach (EconomyPlayer plr in SEconomyPlugin.EconomyPlayers)
+			EconomyPlayer plr = args.ReceiverAccount.Owner;
+
+			var rank = plr.TSPlayer.FindRank();
+			if (rank != null && rank.FindNext() != null)
 			{
-				var rank = plr.TSPlayer.FindRank();
-				if (rank != null && rank.FindNext() != null)
+				var newrank = rank.FindNext();
+				if (plr.BankAccount.Balance > newrank.Cost())
 				{
-					var newrank = rank.FindNext();
-					if (plr.BankAccount.Balance > newrank.Cost())
-					{
-						plr.BankAccount.Balance -= newrank.Cost();
-						plr.TSPlayer.Group = newrank.Group();
-						plr.TSPlayer.SendSuccessMessage(MsgParser.Parse(cfg.RankUpMessage, plr.TSPlayer));
-					}
+					var user = TShock.Users.GetUserByID(plr.TSPlayer.UserID);
+
+					plr.BankAccount.Balance -= newrank.Cost();
+					TShock.Users.SetUserGroup(user, newrank.Group().ToString());
+					plr.TSPlayer.SendSuccessMessage(MsgParser.Parse(cfg.RankUpMessage, plr.TSPlayer));
 				}
 			}
+
+			//foreach (EconomyPlayer plr in SEconomyPlugin.EconomyPlayers)
+			//{
+			//	var rank = plr.TSPlayer.FindRank();
+			//	if (rank != null && rank.FindNext() != null)
+			//	{
+			//		var newrank = rank.FindNext();
+			//		if (plr.BankAccount.Balance > newrank.Cost())
+			//		{
+			//			plr.BankAccount.Balance -= newrank.Cost();
+			//			plr.TSPlayer.Group = newrank.Group();
+			//			plr.TSPlayer.SendSuccessMessage(MsgParser.Parse(cfg.RankUpMessage, plr.TSPlayer));
+			//		}
+			//	}
+			//}
 		}
 
 		void RankCheck(CommandArgs args)

@@ -47,7 +47,8 @@ namespace AutoRank
 				{ "%NEXT_NAME%", rank.FindNext().name },
 				{ "%NEXT_GROUP%", rank.FindNext().group },
 				{ "%NEXT_COST%", rank.FindNext().Cost().ToLongString() },
-				{ "%CURLEFT%", new Money(rank.FindNext().Cost() - plr.BankAccount.Balance).ToLongString(true) }
+				{ "%CURLEFT%", new Money(rank.FindNext().Cost() - plr.BankAccount.Balance).ToLongString(true) },
+				{ "%BALANCE%", plr.BankAccount.Balance.ToLongString(true) }
 				
 			};
 

@@ -14,7 +14,6 @@ namespace AutoRank
 	[ApiVersion(1, 16)]
     public class AutoRank : TerrariaPlugin
     {
-		//Timer UpdateTimer;
 		Config.Cfg cfg;
 
 		public override Version Version
@@ -64,7 +63,7 @@ namespace AutoRank
 			if (disposing)
 			{
 				ServerApi.Hooks.GameInitialize.Deregister(this, OnInitialize);
-				//UpdateTimer.Elapsed -= UpdateTimerTick;
+				SEconomyPlugin.RunningJournal.BankTransferCompleted -= BankTransferCompleted;
 			}
 			base.Dispose(disposing);
 		}
@@ -77,14 +76,15 @@ namespace AutoRank
 
 		void OnInitialize(EventArgs e)
 		{
-			//UpdateTimer = new Timer(cfg.UpdateInterval);
-			//UpdateTimer.Elapsed += UpdateTimerTick;
-			//UpdateTimer.Start();
 			SEconomyPlugin.RunningJournal.BankTransferCompleted += BankTransferCompleted;
 		}
 
 		void BankTransferCompleted(object sender, Wolfje.Plugins.SEconomy.Journal.BankTransferEventArgs args)
 		{
+			// The world account does not have a rank
+			if (args.ReceiverAccount == SEconomyPlugin.WorldAccount)
+				return;
+
 			EconomyPlayer plr = args.ReceiverAccount.Owner;
 
 			var rank = plr.TSPlayer.FindRank();
@@ -95,26 +95,14 @@ namespace AutoRank
 				{
 					var user = TShock.Users.GetUserByID(plr.TSPlayer.UserID);
 
-					plr.BankAccount.Balance -= newrank.Cost();
+					plr.BankAccount.TransferToAsync(SEconomyPlugin.WorldAccount, newrank.Cost(),
+						Wolfje.Plugins.SEconomy.Journal.BankAccountTransferOptions.None,
+						null, string.Format("{0} paid {1} to rank up with AutoRank.", plr.TSPlayer.Name,
+						newrank.Cost().ToString()));
 					TShock.Users.SetUserGroup(user, newrank.Group().ToString());
 					plr.TSPlayer.SendSuccessMessage(MsgParser.Parse(cfg.RankUpMessage, plr.TSPlayer));
 				}
 			}
-
-			//foreach (EconomyPlayer plr in SEconomyPlugin.EconomyPlayers)
-			//{
-			//	var rank = plr.TSPlayer.FindRank();
-			//	if (rank != null && rank.FindNext() != null)
-			//	{
-			//		var newrank = rank.FindNext();
-			//		if (plr.BankAccount.Balance > newrank.Cost())
-			//		{
-			//			plr.BankAccount.Balance -= newrank.Cost();
-			//			plr.TSPlayer.Group = newrank.Group();
-			//			plr.TSPlayer.SendSuccessMessage(MsgParser.Parse(cfg.RankUpMessage, plr.TSPlayer));
-			//		}
-			//	}
-			//}
 		}
 
 		void RankCheck(CommandArgs args)

@@ -5,6 +5,7 @@ using System.Text;
 using System.Threading.Tasks;
 using TShockAPI;
 using Wolfje.Plugins.SEconomy;
+using Newtonsoft.Json;
 //using TShockAPI.DB;
 
 namespace AutoRank
@@ -15,8 +16,7 @@ namespace AutoRank
 		public string parentgroup { get; set; }
 		public string group { get; set; }
 		public string cost { get; set; }
-		//[Obsolete("Replaced by the auto rank tree gen.")]
-		//public string RankLine { get; set; }
+		public string[] levelupcommands { get; set; }
 
 		public int GetIndex(List<Rank> list)
 		{
@@ -54,6 +54,22 @@ namespace AutoRank
 				return false;
 			else
 				return true;
+		}
+
+		public void PerformCommands(TSPlayer ply)
+		{
+			foreach (string str in levelupcommands)
+			{
+				var args = Utils.ParseParameters(str);
+				args[0] = args[0].Remove(0, 1);
+				var cmd = Commands.ChatCommands.FirstOrDefault(_ => _.HasAlias(args[0]));
+				string cmdText = string.Join(" ", args);
+				args.RemoveAt(0);
+				if (cmd != null)
+				{
+					cmd.RunWithoutPermissions(cmdText, ply, args);
+				}
+			}
 		}
 	}
 }

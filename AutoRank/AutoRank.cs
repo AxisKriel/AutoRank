@@ -100,6 +100,8 @@ namespace AutoRank
 						null, string.Format("{0} paid {1} to rank up with AutoRank.", plr.TSPlayer.Name,
 						newrank.Cost().ToString()));
 					TShock.Users.SetUserGroup(user, newrank.Group().ToString());
+					if (newrank.levelupcommands != null)
+						newrank.PerformCommands(plr.TSPlayer);
 					plr.TSPlayer.SendSuccessMessage(MsgParser.Parse(cfg.RankUpMessage, plr.TSPlayer));
 				}
 			}

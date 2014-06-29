@@ -88,20 +88,25 @@ namespace AutoRank
 			EconomyPlayer plr = args.ReceiverAccount.Owner;
 
 			var rank = plr.TSPlayer.FindRank();
-			if (rank != null && rank.FindNext() != null)
+			if (rank != null)
 			{
-				var newrank = rank.FindNext();
-				if (plr.BankAccount.Balance > newrank.Cost())
+				var ranks = rank.FindNextRanks(plr.BankAccount.Balance);
+				if (ranks.Count > 0)
 				{
 					var user = TShock.Users.GetUserByID(plr.TSPlayer.UserID);
-
-					plr.BankAccount.TransferToAsync(SEconomyPlugin.WorldAccount, newrank.Cost(),
+					Money cost = 0L;
+					foreach (Rank rk in ranks)
+					{
+						cost += rk.Cost();
+						if (rk.levelupcommands != null)
+							rk.PerformCommands(plr.TSPlayer);
+					}
+					plr.BankAccount.TransferToAsync(SEconomyPlugin.WorldAccount, cost,
 						Wolfje.Plugins.SEconomy.Journal.BankAccountTransferOptions.None,
 						null, string.Format("{0} paid {1} to rank up with AutoRank.", plr.TSPlayer.Name,
-						newrank.Cost().ToString()));
-					TShock.Users.SetUserGroup(user, newrank.Group().ToString());
-					if (newrank.levelupcommands != null)
-						newrank.PerformCommands(plr.TSPlayer);
+						cost.ToString()));
+					var lastrank = ranks.Last();
+					TShock.Users.SetUserGroup(user, lastrank.Group().ToString());
 					plr.TSPlayer.SendSuccessMessage(MsgParser.Parse(cfg.RankUpMessage, plr.TSPlayer));
 				}
 			}

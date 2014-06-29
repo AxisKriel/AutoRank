@@ -58,5 +58,12 @@ namespace AutoRank
 			else
 				return false;
 		}
+
+		public static List<string> ParseParameters(string cmd)
+		{
+			var args = new List<string>();
+			args.AddRange(cmd.Split(' '));
+			return args;
+		}
 	}
 }

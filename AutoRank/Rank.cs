@@ -48,6 +48,23 @@ namespace AutoRank
 			return Config.config.Ranks.FirstOrDefault(r => r.ParentGroup() == this.Group());
 		}
 
+		public List<Rank> FindNextRanks(Money value)
+		{
+			var list = new List<Rank>();
+			long stack = 0L;
+			var rank = this;
+			while (stack < value)
+			{
+				rank = rank.FindNext();
+				if (rank == null)
+					return list;
+				stack += rank.Cost();
+				list.Add(rank);
+			}
+			list.RemoveAt(list.Count - 1);
+			return list;
+		}
+
 		public bool GroupExists()
 		{
 			if (this.Group() == null)

@@ -98,16 +98,26 @@ namespace AutoRank
 					foreach (Rank rk in ranks)
 					{
 						cost += rk.Cost();
-						if (rk.levelupcommands != null)
-							rk.PerformCommands(plr.TSPlayer);
 					}
 					plr.BankAccount.TransferToAsync(SEconomyPlugin.WorldAccount, cost,
 						Wolfje.Plugins.SEconomy.Journal.BankAccountTransferOptions.None,
 						null, string.Format("{0} paid {1} to rank up with AutoRank.", plr.TSPlayer.Name,
-						cost.ToString()));
-					var lastrank = ranks.Last();
-					TShock.Users.SetUserGroup(user, lastrank.Group().ToString());
-					plr.TSPlayer.SendSuccessMessage(MsgParser.Parse(cfg.RankUpMessage, plr.TSPlayer));
+						cost.ToString())).ContinueWith((task) =>
+							{
+								if (!task.Result.TransferSucceeded)
+								{
+									plr.TSPlayer.SendErrorMessage(
+										"Your transaction could not be completed. Start a new transaction to retry.");
+									return;
+								}
+
+								foreach (Rank rk in ranks)
+									rk.PerformCommands(plr.TSPlayer);
+
+								var lastrank = ranks.Last();
+								TShock.Users.SetUserGroup(user, lastrank.Group().ToString());
+								plr.TSPlayer.SendSuccessMessage(MsgParser.Parse(cfg.RankUpMessage, plr.TSPlayer));
+							});
 				}
 			}
 		}

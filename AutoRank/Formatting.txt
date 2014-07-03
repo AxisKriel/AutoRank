@@ -22,4 +22,12 @@ RankCmdMsg & MaxRankMsg available wildcards:
 %CURLEFT% - The currency left to reach the next rank (NextRank's cost - Player Bank Account's balance)
 %BALANCE% - The player's balance parsed as SEconomy Money.ToLongString(true).
 
+levelupcommands available wildcards:
+%PLAYER_<obj>% - Returns information regarding the player who just ranked up. Use one of the following as <obj>:
+					-> NAME
+					-> INDEX
+					-> IP
+					-> GROUP
+					-> RANK
+
 If you have any wildcard that you'd like to see added, please submit your request as feedback in the OP.

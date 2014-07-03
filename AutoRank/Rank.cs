@@ -75,12 +75,17 @@ namespace AutoRank
 
 		public void PerformCommands(TSPlayer ply)
 		{
+			string text;
+			List<string> args;
+			Command cmd;
+			string cmdText;
 			foreach (string str in levelupcommands)
 			{
-				var args = Utils.ParseParameters(str);
+				text = MsgParser.ParseCommand(str, ply);
+				args = Utils.ParseParameters(text);
 				args[0] = args[0].Remove(0, 1);
-				var cmd = Commands.ChatCommands.FirstOrDefault(_ => _.HasAlias(args[0]));
-				string cmdText = string.Join(" ", args);
+				cmd = Commands.ChatCommands.FirstOrDefault(_ => _.HasAlias(args[0]));
+				cmdText = string.Join(" ", args);
 				args.RemoveAt(0);
 				if (cmd != null)
 				{

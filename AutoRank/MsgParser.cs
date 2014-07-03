@@ -35,26 +35,26 @@ namespace AutoRank
 
 		public static string Parse(string msg, List<Rank> tree, Rank rank, EconomyPlayer plr)
 		{
-			Dictionary<string, object> parsers = new Dictionary<string, object>()
+			var parsers = new Dictionary<string, object>()
 			{
-				{ "%CUR_INDEX%", (rank.GetIndex(tree) + 1) },
-				{ "%CUR_NAME%", rank.name },
-				{ "%CUR_GROUP%", rank.group },
-				{ "%CUR_PARENT%", rank.parentgroup },
-				{ "%CUR_COST%", rank.Cost().ToLongString() },
-				{ "%MAX%", tree.Count.ToString() },
-				{ "%NEXT_INDEX%", (rank.FindNext().GetIndex(tree) + 1) },
-				{ "%NEXT_NAME%", rank.FindNext().name },
-				{ "%NEXT_GROUP%", rank.FindNext().group },
-				{ "%NEXT_COST%", rank.FindNext().Cost().ToLongString() },
-				{ "%CURLEFT%", new Money(rank.FindNext().Cost() - plr.BankAccount.Balance).ToLongString(true) },
-				{ "%BALANCE%", plr.BankAccount.Balance.ToLongString(true) }
+				{"%CUR_INDEX%", (rank.GetIndex(tree) + 1)},
+				{"%CUR_NAME%", rank.name},
+				{"%CUR_GROUP%", rank.group},
+				{"%CUR_PARENT%", rank.parentgroup},
+				{"%CUR_COST%", rank.Cost().ToLongString()},
+				{"%MAX%", tree.Count.ToString()},
+				{"%NEXT_INDEX%", (rank.FindNext().GetIndex(tree) + 1)},
+				{"%NEXT_NAME%", rank.FindNext().name},
+				{"%NEXT_GROUP%", rank.FindNext().group},
+				{"%NEXT_COST%", rank.FindNext().Cost().ToLongString()},
+				{"%CURLEFT%", new Money(rank.FindNext().Cost() - plr.BankAccount.Balance).ToLongString(true)},
+				{"%BALANCE%", plr.BankAccount.Balance.ToLongString(true)}
 				
 			};
 
 			string parsed = msg;
 
-			foreach (KeyValuePair<string, object> wc in parsers)
+			foreach (var wc in parsers)
 			{
 				if (parsed.Contains(wc.Key))
 					parsed = parsed.Replace(wc.Key, wc.Value.ToString());
@@ -77,6 +77,28 @@ namespace AutoRank
 				Log.ConsoleError(ex.Message);
 				return ex.ToString();
 			}
+		}
+
+		public static string ParseCommand(string cmd, TSPlayer plr)
+		{
+			var plrprs = new Dictionary<string, object>()
+			{
+				{"NAME", plr.Name},
+				{"INDEX", plr.Index.ToString()},
+				{"IP", plr.IP},
+				{"GROUP", plr.Group.Name},
+				{"RANK", plr.FindRank() == null ? "None" : plr.FindRank().name}
+			};
+
+			string parsed = cmd;
+			string plrparser;
+
+			foreach (var wc in plrprs)
+			{
+				plrparser = string.Format("%PLAYER_{0}%", wc.Key);
+				parsed = parsed.Replace(plrparser, wc.Value.ToString());
+			}
+			return parsed;
 		}
 	}
 }

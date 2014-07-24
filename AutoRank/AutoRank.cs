@@ -81,44 +81,63 @@ namespace AutoRank
 
 		void BankTransferCompleted(object sender, Wolfje.Plugins.SEconomy.Journal.BankTransferEventArgs args)
 		{
-			// The world account does not have a rank
-			if (args.ReceiverAccount == SEconomyPlugin.WorldAccount)
-				return;
-
-			EconomyPlayer plr = args.ReceiverAccount.Owner;
-
-			var rank = plr.TSPlayer.FindRank();
-			if (rank != null)
+			try
 			{
-				var ranks = rank.FindNextRanks(plr.BankAccount.Balance);
-				if (ranks.Count > 0)
+				// SEconomy Update 15 Note: null check for SEconomyPlugin.Instance as it might be null
+				// The world account does not have a rank
+				if (args.ReceiverAccount.IsSystemAccount || args.ReceiverAccount == null)
+					return;
+
+				var plr = args.ReceiverAccount.Owner;
+				if (plr == null || plr.BankAccount == null || plr.TSPlayer == null)
+					return;
+
+				var rank = plr.TSPlayer.FindRank();
+				if (rank != null)
 				{
-					var user = TShock.Users.GetUserByID(plr.TSPlayer.UserID);
-					Money cost = 0L;
-					foreach (Rank rk in ranks)
+					var ranks = rank.FindNextRanks(plr.BankAccount.Balance);
+					if (ranks.Count > 0)
 					{
-						cost += rk.Cost();
-					}
-					plr.BankAccount.TransferToAsync(SEconomyPlugin.WorldAccount, cost,
-						Wolfje.Plugins.SEconomy.Journal.BankAccountTransferOptions.None,
-						null, string.Format("{0} paid {1} to rank up with AutoRank.", plr.TSPlayer.Name,
-						cost.ToString())).ContinueWith((task) =>
-							{
-								if (!task.Result.TransferSucceeded)
+						var user = TShock.Users.GetUserByID(plr.TSPlayer.UserID);
+						if (user == null)
+							return;
+
+						Money cost = 0L;
+						foreach (Rank rk in ranks)
+						{
+							cost += rk.Cost();
+						}
+						plr.BankAccount.TransferToAsync(SEconomyPlugin.WorldAccount, cost,
+							Wolfje.Plugins.SEconomy.Journal.BankAccountTransferOptions.None,
+							null, string.Format("{0} paid {1} to rank up with AutoRank.", plr.TSPlayer.Name,
+							cost.ToString())).ContinueWith((task) =>
 								{
-									plr.TSPlayer.SendErrorMessage(
-										"Your transaction could not be completed. Start a new transaction to retry.");
-									return;
-								}
+									if (!task.Result.TransferSucceeded)
+									{
+										plr.TSPlayer.SendErrorMessage(
+											"Your transaction could not be completed. Start a new transaction to retry.");
+										return;
+									}
 
-								foreach (Rank rk in ranks)
-									rk.PerformCommands(plr.TSPlayer);
+									foreach (Rank rk in ranks)
+										rk.PerformCommands(plr.TSPlayer);
 
-								var lastrank = ranks.Last();
-								TShock.Users.SetUserGroup(user, lastrank.Group().ToString());
-								plr.TSPlayer.SendSuccessMessage(MsgParser.Parse(cfg.RankUpMessage, plr.TSPlayer));
-							});
+									var lastrank = ranks.Last() ?? new Rank("Error");
+									if (!lastrank.GroupExists())
+									{
+										Log.ConsoleError(Error.Group(lastrank.group));
+										return;
+									}
+									TShock.Users.SetUserGroup(user, lastrank.Group().ToString());
+									plr.TSPlayer.SendSuccessMessage(MsgParser.Parse(cfg.RankUpMessage, plr.TSPlayer));
+								});
+					}
 				}
+			}
+			catch (Exception ex)
+			{
+				Log.ConsoleError("AutoRank has returned an exception:");
+				Log.ConsoleError(ex.ToString());
 			}
 		}
 

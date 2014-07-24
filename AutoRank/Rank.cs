@@ -75,6 +75,10 @@ namespace AutoRank
 
 		public void PerformCommands(TSPlayer ply)
 		{
+			// Null check <.<
+			if (levelupcommands == null)
+				return;
+
 			string text;
 			List<string> args;
 			Command cmd;

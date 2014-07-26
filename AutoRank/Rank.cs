@@ -6,7 +6,6 @@ using System.Threading.Tasks;
 using TShockAPI;
 using Wolfje.Plugins.SEconomy;
 using Newtonsoft.Json;
-//using TShockAPI.DB;
 
 namespace AutoRank
 {

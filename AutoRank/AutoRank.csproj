@@ -65,7 +65,8 @@
     <Reference Include="TShockAPI">
       <HintPath>Refs\TShockAPI.dll</HintPath>
     </Reference>
-    <Reference Include="Wolfje.Plugins.SEconomy">
+    <Reference Include="Wolfje.Plugins.SEconomy, Version=1.0.14.0, Culture=neutral, processorArchitecture=MSIL">
+      <SpecificVersion>False</SpecificVersion>
       <HintPath>Refs\Wolfje.Plugins.SEconomy.dll</HintPath>
     </Reference>
   </ItemGroup>

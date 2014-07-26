@@ -5,7 +5,7 @@ using System.Text;
 using System.Threading.Tasks;
 using TShockAPI;
 using Wolfje.Plugins.SEconomy;
-using Wolfje.Plugins.SEconomy.Economy;
+using Wolfje.Plugins.SEconomy.Journal;
 
 namespace AutoRank
 {
@@ -33,8 +33,11 @@ namespace AutoRank
 			return parsed;
 		}
 
-		public static string Parse(string msg, List<Rank> tree, Rank rank, EconomyPlayer plr)
+		public static string Parse(string msg, List<Rank> tree, Rank rank, IBankAccount account)
 		{
+			if (account == null)
+				return null;
+
 			var parsers = new Dictionary<string, object>()
 			{
 				{"%CUR_INDEX%", (rank.GetIndex(tree) + 1)},
@@ -47,8 +50,8 @@ namespace AutoRank
 				{"%NEXT_NAME%", rank.FindNext().name},
 				{"%NEXT_GROUP%", rank.FindNext().group},
 				{"%NEXT_COST%", rank.FindNext().Cost().ToLongString()},
-				{"%CURLEFT%", new Money(rank.FindNext().Cost() - plr.BankAccount.Balance).ToLongString(true)},
-				{"%BALANCE%", plr.BankAccount.Balance.ToLongString(true)}
+				{"%CURLEFT%", new Money(rank.FindNext().Cost() - account.Balance).ToLongString(true)},
+				{"%BALANCE%", account.Balance.ToLongString(true)}
 				
 			};
 
@@ -63,19 +66,19 @@ namespace AutoRank
 			return parsed;
 		}
 
-		public static string ParseRankTree(List<Rank> tree, int index, EconomyPlayer plr)
+		public static string ParseRankTree(List<Rank> tree, int index, IBankAccount account)
 		{
 			try
 			{
 				Rank rank = tree[index];
 
 				return Parse((Utils.IsLastRankInLine(rank, tree) ? Config.config.MaxRankMsg :
-					Config.config.RankCmdMsg), tree, rank, plr);
+					Config.config.RankCmdMsg), tree, rank, account);
 			}
 			catch (ArgumentOutOfRangeException ex)
 			{
-				Log.ConsoleError(ex.Message);
-				return ex.ToString();
+				Log.ConsoleError(ex.ToString());
+				return null;
 			}
 		}
 

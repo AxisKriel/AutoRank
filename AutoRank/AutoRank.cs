@@ -13,7 +13,7 @@ namespace AutoRank
 	[ApiVersion(1, 16)]
     public class AutoRank : TerrariaPlugin
     {
-		Config.Cfg cfg;
+		public static Config Config { get; set; }
 
 		public override Version Version
 		{
@@ -48,12 +48,12 @@ namespace AutoRank
 
 		public override void Initialize()
 		{
-			Config.ReadConfig();
-			cfg = Config.config;
+			Config = Config.Read();
+			Utils.WriteFiles();
 
 			ServerApi.Hooks.GameInitialize.Register(this, OnInitialize);
 
-			Commands.ChatCommands.Add(new Command(RankCheck, cfg.RankCmdAlias));
+			Commands.ChatCommands.Add(new Command(RankCheck, Config.RankCmdAlias));
 			Commands.ChatCommands.Add(new Command("autorank.reload", Reload, "rank-reload"));
 		}
 
@@ -80,7 +80,7 @@ namespace AutoRank
 				SEconomyPlugin.Instance.RunningJournal.BankTransferCompleted += BankTransferCompleted;
 		}
 
-		void BankTransferCompleted(object sender, Wolfje.Plugins.SEconomy.Journal.BankTransferEventArgs args)
+		async void BankTransferCompleted(object sender, Wolfje.Plugins.SEconomy.Journal.BankTransferEventArgs args)
 		{
 			try
 			{
@@ -92,8 +92,8 @@ namespace AutoRank
 				if (args.ReceiverAccount.IsSystemAccount || args.ReceiverAccount == null)
 					return;
 
-				var ply = TShock.Players.FirstOrDefault((player) =>
-					player.UserAccountName == args.ReceiverAccount.UserAccountName);
+				TSPlayer ply = TShock.Players.FirstOrDefault(p => p != null && p.IsLoggedIn &&
+					p.UserAccountName.Equals(args.ReceiverAccount.UserAccountName, StringComparison.OrdinalIgnoreCase));
 				if (ply == null)
 					return;
 
@@ -112,9 +112,9 @@ namespace AutoRank
 						{
 							cost += rk.Cost();
 						}
-						args.ReceiverAccount.TransferToAsync(SEconomyPlugin.Instance.WorldAccount, cost,
+						await args.ReceiverAccount.TransferToAsync(SEconomyPlugin.Instance.WorldAccount, cost,
 							Wolfje.Plugins.SEconomy.Journal.BankAccountTransferOptions.None,
-							null, string.Format("{0} paid {1} to rank up with AutoRank.", ply.Name,
+							null, String.Format("{0} paid {1} to rank up with AutoRank.", ply.Name,
 							cost.ToString())).ContinueWith((task) =>
 								{
 									if (!task.Result.TransferSucceeded)
@@ -127,22 +127,23 @@ namespace AutoRank
 									foreach (Rank rk in ranks)
 										rk.PerformCommands(ply);
 
-									var lastrank = ranks.Last() ?? new Rank("Error");
-									if (!lastrank.GroupExists())
+									var lastrank = ranks.LastOrDefault();
+									if (lastrank == null || !lastrank.GroupExists())
 									{
-										Log.ConsoleError(Error.Group(lastrank.group));
+										Log.ConsoleError(Error.Group(lastrank == null ? "NULL" : lastrank.group));
 										return;
 									}
-									TShock.Users.SetUserGroup(user, lastrank.Group().ToString());
-									ply.SendSuccessMessage(MsgParser.Parse(cfg.RankUpMessage, ply));
+									TShock.Users.SetUserGroup(user, lastrank.Group().Name);
+									ply.SendSuccessMessage(MsgParser.Parse(Config.RankUpMessage, ply, lastrank));
 								});
 					}
 				}
 			}
 			catch (Exception ex)
 			{
-				Log.ConsoleError("AutoRank has returned an exception:");
-				Log.ConsoleError(ex.ToString());
+				Log.ConsoleError("[AutoRank] Exception at 'BankTransferCompleted': {0}\nCheck logs for details.",
+					ex.Message);
+				Log.Error(ex.ToString());
 			}
 		}
 
@@ -155,26 +156,27 @@ namespace AutoRank
 				return;
 			}
 
-			var ranktree = Utils.MakeRankTree2(rank);
-			var str = MsgParser.ParseRankTree(
-				ranktree,
-				rank.GetIndex(ranktree),
-				SEconomyPlugin.Instance.GetBankAccount(args.Player));
-
-			if (str == null)
+			var ranktree = Utils.MakeRankTree(rank);
+			if (ranktree != null)
 			{
-				args.Player.SendErrorMessage("Failed to send your rank information.");
-				return;
+				var str = MsgParser.ParseRankTree(
+					ranktree,
+					rank.GetIndex(ranktree),
+					SEconomyPlugin.Instance.GetBankAccount(args.Player));
+
+				if (str != null)
+				{
+					args.Player.SendInfoMessage(str);
+					return;
+				}
 			}
-			args.Player.SendInfoMessage(str);
+			args.Player.SendErrorMessage("Failed to send your rank information.");
 		}
 
 		void Reload(CommandArgs args)
 		{
-			if (Config.ReadConfig())
-				args.Player.SendSuccessMessage("[AutoRank] Config reloaded successfully.");
-			else
-				args.Player.SendErrorMessage("[AutoRank] Failed to reload config. Check logs for details.");
+			Config = Config.Read();
+			args.Player.SendSuccessMessage("[AutoRank] Reloaded config!");
 		}
     }
 }

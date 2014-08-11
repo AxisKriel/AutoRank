@@ -19,7 +19,7 @@ namespace AutoRank
 
 		public int GetIndex(List<Rank> list)
 		{
-			return list.FindIndex(r => r == this);
+			return list.IndexOf(this);
 		}
 
 		public Rank(string Name)
@@ -44,7 +44,7 @@ namespace AutoRank
 
 		public Rank FindNext()
 		{
-			return Config.config.Ranks.FirstOrDefault(r => r.ParentGroup() == this.Group());
+			return AutoRank.Config.Ranks.Find(r => r.ParentGroup() == this.Group());
 		}
 
 		public List<Rank> FindNextRanks(Money value)
@@ -52,15 +52,17 @@ namespace AutoRank
 			var list = new List<Rank>();
 			long stack = 0L;
 			var rank = this;
-			while (stack < value)
+			Rank nextRank;
+			while (true)
 			{
-				rank = rank.FindNext();
-				if (rank == null)
-					return list;
-				stack += rank.Cost();
+				nextRank = rank.FindNext();
+				if (nextRank == null || nextRank.Cost() == 0L)
+					break;
+				stack += nextRank.Cost();
+				if (stack > value)
+					break;
 				list.Add(rank);
 			}
-			list.RemoveAt(list.Count - 1);
 			return list;
 		}
 
@@ -75,7 +77,7 @@ namespace AutoRank
 		public void PerformCommands(TSPlayer ply)
 		{
 			// Null check <.<
-			if (levelupcommands == null)
+			if (levelupcommands == null || ply == null)
 				return;
 
 			string text;
@@ -86,8 +88,8 @@ namespace AutoRank
 			{
 				text = MsgParser.ParseCommand(str, ply);
 				args = Utils.ParseParameters(text);
-				args[0] = args[0].Remove(0, 1);
-				cmd = Commands.ChatCommands.FirstOrDefault(_ => _.HasAlias(args[0]));
+				args[0] = args[0].Substring(1);
+				cmd = Commands.ChatCommands.Find((command) => command.HasAlias(args[0]));
 				cmdText = string.Join(" ", args);
 				args.RemoveAt(0);
 				if (cmd != null)

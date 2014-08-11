@@ -11,7 +11,7 @@ namespace AutoRank
 {
 	public class MsgParser
 	{
-		public static string Parse(string msg, TSPlayer ply, Rank rank = null)
+		public static string Parse(string msg, TSPlayer ply, Rank rank)
 		{
 			string parsed = msg;
 
@@ -59,8 +59,18 @@ namespace AutoRank
 
 			foreach (var wc in parsers)
 			{
-				if (parsed.Contains(wc.Key))
-					parsed = parsed.Replace(wc.Key, wc.Value.ToString());
+				try
+				{
+					if (parsed.Contains(wc.Key))
+						parsed = parsed.Replace(wc.Key, wc.Value.ToString());
+				}
+				catch (Exception ex)
+				{
+					Log.ConsoleError(
+						"[AutoRank] Exception at 'MsgParser.Parse2': {0}\nCheck logs for details.",
+						ex.Message);
+					Log.Error(ex.ToString());
+				}
 			}
 
 			return parsed;
@@ -68,18 +78,13 @@ namespace AutoRank
 
 		public static string ParseRankTree(List<Rank> tree, int index, IBankAccount account)
 		{
-			try
-			{
-				Rank rank = tree[index];
-
-				return Parse((Utils.IsLastRankInLine(rank, tree) ? Config.config.MaxRankMsg :
-					Config.config.RankCmdMsg), tree, rank, account);
-			}
-			catch (ArgumentOutOfRangeException ex)
-			{
-				Log.ConsoleError(ex.ToString());
+			// Should no longer return exceptions with this check
+			if (index < 0 || index >= tree.Count)
 				return null;
-			}
+
+			Rank rank = tree[index];
+			return Parse((Utils.IsLastRankInLine(rank, tree) ? AutoRank.Config.MaxRankMsg :
+				AutoRank.Config.RankCmdMsg), tree, rank, account);
 		}
 
 		public static string ParseCommand(string cmd, TSPlayer plr)
@@ -87,7 +92,7 @@ namespace AutoRank
 			var plrprs = new Dictionary<string, object>()
 			{
 				{"NAME", plr.Name},
-				{"INDEX", plr.Index.ToString()},
+				{"INDEX", plr.Index},
 				{"IP", plr.IP},
 				{"GROUP", plr.Group.Name},
 				{"RANK", plr.FindRank() == null ? "None" : plr.FindRank().name}
@@ -98,7 +103,7 @@ namespace AutoRank
 
 			foreach (var wc in plrprs)
 			{
-				plrparser = string.Format("%PLAYER_{0}%", wc.Key);
+				plrparser = String.Format("%PLAYER_{0}%", wc.Key);
 				parsed = parsed.Replace(plrparser, wc.Value.ToString());
 			}
 			return parsed;

@@ -56,7 +56,7 @@ namespace AutoRank
 				}
 				else
 				{
-					file = JsonConvert.DeserializeObject<Config>(filepath);
+					file = JsonConvert.DeserializeObject<Config>(File.ReadAllText(filepath));
 				}
 			}
 			catch (Exception ex)

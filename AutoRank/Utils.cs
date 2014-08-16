@@ -10,16 +10,6 @@ namespace AutoRank
 {
 	public static class Utils
 	{
-		/// <summary>
-		/// AutoRank Extension: Gets the player's rank.
-		/// </summary>
-		/// <param name="ply"></param>
-		/// <returns></returns>
-		public static Rank FindRank(this TSPlayer ply)
-		{
-			return AutoRank.Config.Ranks.Find((rank) => rank.Group() == ply.Group);
-		}
-
 		#region Format
 		private static string Format = @"Formatting wildcards to be used with the config custom strings.
 
@@ -93,16 +83,46 @@ If you have any wildcard that you'd like to see added, please submit your reques
 
 		public static bool IsLastRankInLine(Rank rank, List<Rank> line)
 		{
-			if (rank == line.Last())
+			if (rank != null && line != null && rank == line.Last())
 				return true;
 			else
 				return false;
 		}
 
-		public static List<string> ParseParameters(string cmd)
+		public static List<string> ParseParameters(string text)
 		{
+			text = text.Trim();
 			var args = new List<string>();
-			args.AddRange(cmd.Split(' '));
+			StringBuilder sb = new StringBuilder();
+			bool quote = false;
+			for (int i = 0; i < text.Length; i++)
+			{
+				char c = text[i];
+
+				//if (c == '\\' && i++ < text.Length)
+				//{
+				//	char cc = text[i];
+				//	if (cc != '"' && cc != '\\')
+				//	{
+				//		sb.Append(c);
+				//	}
+				//	sb.Append(cc);
+				//}
+				if (Char.IsWhiteSpace(c) && !quote)
+				{
+					args.Add(sb.ToString());
+					sb.Clear();
+				}
+				else if (c == '"')
+				{
+					quote = !quote;
+				}
+				else
+				{
+					sb.Append(c);
+				}
+			}
+			args.Add(sb.ToString());
 			return args;
 		}
 

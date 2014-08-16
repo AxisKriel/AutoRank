@@ -61,7 +61,7 @@ namespace AutoRank
 				stack += nextRank.Cost();
 				if (stack > value)
 					break;
-				list.Add(rank);
+				list.Add(nextRank);
 			}
 			return list;
 		}
@@ -90,11 +90,10 @@ namespace AutoRank
 				args = Utils.ParseParameters(text);
 				args[0] = args[0].Substring(1);
 				cmd = Commands.ChatCommands.Find((command) => command.HasAlias(args[0]));
-				cmdText = string.Join(" ", args);
 				args.RemoveAt(0);
 				if (cmd != null)
 				{
-					cmd.RunWithoutPermissions(cmdText, ply, args);
+					cmd.RunWithoutPermissions(text, ply, args);
 				}
 			}
 		}

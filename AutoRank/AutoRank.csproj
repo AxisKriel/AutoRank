@@ -62,18 +62,12 @@
     <Reference Include="TerrariaServer">
       <HintPath>Refs\TerrariaServer.exe</HintPath>
     </Reference>
-    <Reference Include="TShockAPI">
-      <HintPath>Refs\TShockAPI.dll</HintPath>
-    </Reference>
-    <Reference Include="Wolfje.Plugins.SEconomy, Version=1.0.14.0, Culture=neutral, processorArchitecture=MSIL">
-      <SpecificVersion>False</SpecificVersion>
-      <HintPath>Refs\Wolfje.Plugins.SEconomy.dll</HintPath>
-    </Reference>
   </ItemGroup>
   <ItemGroup>
     <Compile Include="AutoRank.cs" />
     <Compile Include="Config.cs" />
     <Compile Include="Error.cs" />
+    <Compile Include="Extensions\TSPlayerExtensions.cs" />
     <Compile Include="MsgParser.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="Rank.cs" />
@@ -83,7 +77,16 @@
     <Content Include="Build\AutoRank.dll" />
     <Content Include="Formatting.txt" />
   </ItemGroup>
-  <ItemGroup />
+  <ItemGroup>
+    <ProjectReference Include="..\..\SEconomy\SEconomyPlugin\SEconomyPlugin.csproj">
+      <Project>{a3dfc107-09d3-4bc4-be73-ce7d1cc98495}</Project>
+      <Name>SEconomyPlugin</Name>
+    </ProjectReference>
+    <ProjectReference Include="..\..\TShock\TShockAPI\TShockAPI.csproj">
+      <Project>{49606449-072b-4cf5-8088-aa49da586694}</Project>
+      <Name>TShockAPI</Name>
+    </ProjectReference>
+  </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 
        Other similar extension points exist, see Microsoft.Common.targets.

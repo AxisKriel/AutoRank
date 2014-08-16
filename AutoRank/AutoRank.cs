@@ -1,12 +1,14 @@
-﻿using System;
+﻿using AutoRank.Extensions;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using System.Timers;
 using TerrariaApi.Server;
 using TShockAPI;
 using Wolfje.Plugins.SEconomy;
-using System.Timers;
+using Wolfje.Plugins.SEconomy.Journal;
 
 namespace AutoRank
 {
@@ -55,6 +57,7 @@ namespace AutoRank
 
 			Commands.ChatCommands.Add(new Command(RankCheck, Config.RankCmdAlias));
 			Commands.ChatCommands.Add(new Command("autorank.reload", Reload, "rank-reload"));
+			
 		}
 
 		protected override void Dispose(bool disposing)
@@ -80,7 +83,7 @@ namespace AutoRank
 				SEconomyPlugin.Instance.RunningJournal.BankTransferCompleted += BankTransferCompleted;
 		}
 
-		async void BankTransferCompleted(object sender, Wolfje.Plugins.SEconomy.Journal.BankTransferEventArgs args)
+		async void BankTransferCompleted(object sender, BankTransferEventArgs args)
 		{
 			try
 			{
@@ -89,7 +92,10 @@ namespace AutoRank
 					return;
 
 				// The world account does not have a rank
-				if (args.ReceiverAccount.IsSystemAccount || args.ReceiverAccount == null)
+				if (args.ReceiverAccount == null ||
+					!args.ReceiverAccount.IsAccountEnabled ||
+					args.ReceiverAccount.IsSystemAccount ||
+					SEconomyPlugin.Instance.WorldAccount == null)
 					return;
 
 				TSPlayer ply = TShock.Players.FirstOrDefault(p => p != null && p.IsLoggedIn &&
@@ -97,45 +103,45 @@ namespace AutoRank
 				if (ply == null)
 					return;
 
-				var rank = ply.FindRank();
+				var rank = ply.GetRank();
 				if (rank != null)
 				{
 					var ranks = rank.FindNextRanks(args.ReceiverAccount.Balance);
 					if (ranks.Count > 0)
 					{
-						var user = TShock.Users.GetUserByID(ply.UserID);
-						if (user == null)
-							return;
-
 						Money cost = 0L;
 						foreach (Rank rk in ranks)
 						{
 							cost += rk.Cost();
 						}
-						await args.ReceiverAccount.TransferToAsync(SEconomyPlugin.Instance.WorldAccount, cost,
-							Wolfje.Plugins.SEconomy.Journal.BankAccountTransferOptions.None,
-							null, String.Format("{0} paid {1} to rank up with AutoRank.", ply.Name,
-							cost.ToString())).ContinueWith((task) =>
-								{
-									if (!task.Result.TransferSucceeded)
-									{
-										ply.SendErrorMessage(
-											"Your transaction could not be completed. Start a new transaction to retry.");
-										return;
-									}
-
-									foreach (Rank rk in ranks)
-										rk.PerformCommands(ply);
-
-									var lastrank = ranks.LastOrDefault();
-									if (lastrank == null || !lastrank.GroupExists())
-									{
-										Log.ConsoleError(Error.Group(lastrank == null ? "NULL" : lastrank.group));
-										return;
-									}
-									TShock.Users.SetUserGroup(user, lastrank.Group().Name);
-									ply.SendSuccessMessage(MsgParser.Parse(Config.RankUpMessage, ply, lastrank));
-								});
+						var task = await args.ReceiverAccount.TransferToAsync(SEconomyPlugin.Instance.WorldAccount, cost,
+							BankAccountTransferOptions.SuppressDefaultAnnounceMessages, String.Empty,
+							String.Format("{0} paid {1} to rank up with AutoRank.", ply.Name, cost.ToString()));
+						if (!task.TransferSucceeded)
+						{
+							if (task.Exception != null)
+							{
+								Log.ConsoleError("SEconomy Exception: " + task.Exception.Message);
+								Log.ConsoleError(task.Exception.ToString());
+							}
+							ply.SendErrorMessage(
+								"Your transaction could not be completed. Start a new transaction to retry.");
+							return;
+						}
+						await ply.RankUpAsync(ranks);
+						//Task.Factory.StartNew(await args.ReceiverAccount.TransferToAsync(SEconomyPlugin.Instance.WorldAccount, cost,
+						//	BankAccountTransferOptions.None, String.Empty,
+						//	String.Format("{0} paid {1} to rank up with AutoRank.", ply.Name,
+						//	cost.ToString())) }); .ContinueWith((task) =>
+						//		{
+						//			if (!task.Result.TransferSucceeded)
+						//			{
+						//				ply.SendErrorMessage(
+						//					"Your transaction could not be completed. Start a new transaction to retry.");
+						//				return;
+						//			}
+						//			ply.RankUpAsync(ranks);
+						//		});
 					}
 				}
 			}
@@ -147,9 +153,12 @@ namespace AutoRank
 			}
 		}
 
-		void RankCheck(CommandArgs args)
+		async void RankCheck(CommandArgs args)
 		{
-			Rank rank = args.Player.FindRank();
+			if (SEconomyPlugin.Instance == null)
+				return;
+
+			Rank rank = args.Player.GetRank();
 			if (rank == null)
 			{
 				args.Player.SendInfoMessage("You are currently not assigned to a rank line.");
@@ -159,14 +168,25 @@ namespace AutoRank
 			var ranktree = Utils.MakeRankTree(rank);
 			if (ranktree != null)
 			{
-				var str = MsgParser.ParseRankTree(
+				var tuple = MsgParser.ParseRankTree(
 					ranktree,
 					rank.GetIndex(ranktree),
 					SEconomyPlugin.Instance.GetBankAccount(args.Player));
 
-				if (str != null)
+				if (tuple != null)
 				{
-					args.Player.SendInfoMessage(str);
+					if (!Utils.IsLastRankInLine(rank, ranktree) && tuple.Item2 < 0)
+					{
+						var ranks = rank.FindNextRanks(
+							SEconomyPlugin.Instance.GetBankAccount(args.Player).Balance);
+
+						args.Player.SendWarningMessage("Fixing your rank...");
+						await args.Player.RankUpAsync(ranks);
+					}
+					else
+					{
+						args.Player.SendInfoMessage(tuple.Item1);
+					}
 					return;
 				}
 			}
@@ -178,5 +198,5 @@ namespace AutoRank
 			Config = Config.Read();
 			args.Player.SendSuccessMessage("[AutoRank] Reloaded config!");
 		}
-    }
+	}
 }

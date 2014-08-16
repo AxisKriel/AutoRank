@@ -1,4 +1,5 @@
-﻿using System;
+﻿using AutoRank.Extensions;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -33,11 +34,12 @@ namespace AutoRank
 			return parsed;
 		}
 
-		public static string Parse(string msg, List<Rank> tree, Rank rank, IBankAccount account)
+		public static Tuple<string, Money> Parse(string msg, List<Rank> tree, Rank rank, IBankAccount account)
 		{
 			if (account == null)
 				return null;
 
+			Money curleft = rank.FindNext().Cost() - account.Balance;
 			var parsers = new Dictionary<string, object>()
 			{
 				{"%CUR_INDEX%", (rank.GetIndex(tree) + 1)},
@@ -50,7 +52,7 @@ namespace AutoRank
 				{"%NEXT_NAME%", rank.FindNext().name},
 				{"%NEXT_GROUP%", rank.FindNext().group},
 				{"%NEXT_COST%", rank.FindNext().Cost().ToLongString()},
-				{"%CURLEFT%", new Money(rank.FindNext().Cost() - account.Balance).ToLongString(true)},
+				{"%CURLEFT%", curleft.ToLongString(true)},
 				{"%BALANCE%", account.Balance.ToLongString(true)}
 				
 			};
@@ -73,10 +75,10 @@ namespace AutoRank
 				}
 			}
 
-			return parsed;
+			return Tuple.Create<string, Money>(parsed, curleft);
 		}
 
-		public static string ParseRankTree(List<Rank> tree, int index, IBankAccount account)
+		public static Tuple<string, Money> ParseRankTree(List<Rank> tree, int index, IBankAccount account)
 		{
 			// Should no longer return exceptions with this check
 			if (index < 0 || index >= tree.Count)
@@ -89,22 +91,19 @@ namespace AutoRank
 
 		public static string ParseCommand(string cmd, TSPlayer plr)
 		{
-			var plrprs = new Dictionary<string, object>()
+			var replacements = new Dictionary<string, object>()
 			{
-				{"NAME", plr.Name},
-				{"INDEX", plr.Index},
-				{"IP", plr.IP},
-				{"GROUP", plr.Group.Name},
-				{"RANK", plr.FindRank() == null ? "None" : plr.FindRank().name}
+				{ "NAME", plr.Name },
+				{ "INDEX", plr.Index },
+				{ "IP", plr.IP },
+				{ "GROUP", plr.Group.Name },
+				{ "RANK", plr.GetRank() == null ? "None" : plr.GetRank().name }
 			};
 
 			string parsed = cmd;
-			string plrparser;
-
-			foreach (var wc in plrprs)
+			foreach (var word in replacements)
 			{
-				plrparser = String.Format("%PLAYER_{0}%", wc.Key);
-				parsed = parsed.Replace(plrparser, wc.Value.ToString());
+				parsed = parsed.Replace(String.Format("%PLAYER_{0}%", word.Key), word.Value.ToString());
 			}
 			return parsed;
 		}

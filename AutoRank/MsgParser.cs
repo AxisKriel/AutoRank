@@ -12,9 +12,16 @@ namespace AutoRank
 {
 	public class MsgParser
 	{
-		public static string Parse(string msg, TSPlayer ply, Rank rank)
+		public static string Parse(string message, TSPlayer player, Rank rank)
 		{
-			string parsed = msg;
+			if (String.IsNullOrEmpty(message))
+				throw new ArgumentNullException("message cannot be null or empty.");
+			if (player == null)
+				throw new ArgumentNullException("player cannot be null.");
+			if (rank == null)
+				throw new ArgumentNullException("rank cannot be null.");
+
+			string parsed = message;
 
 			if (parsed.Contains("%NAME%"))
 			{
@@ -23,43 +30,89 @@ namespace AutoRank
 
 			if (parsed.Contains("%GROUP%"))
 			{
-				parsed = parsed.Replace("%GROUP%", ply.Group.Name);
+				parsed = parsed.Replace("%GROUP%", player.Group.Name);
 			}
 
 			if (parsed.Contains("%PARENT%"))
 			{
-				parsed = parsed.Replace("%PARENT%", ply.Group.ParentName);
+				parsed = parsed.Replace("%PARENT%", player.Group.ParentName);
 			}
 
 			return parsed;
 		}
 
-		public static Tuple<string, Money> Parse(string msg, List<Rank> tree, Rank rank, IBankAccount account)
+		public static Tuple<string, Money> Parse(string message, List<Rank> tree, Rank rank, IBankAccount account)
 		{
+			if (String.IsNullOrEmpty(message))
+				throw new ArgumentNullException("message cannot be null or empty.");
+			if (tree == null)
+				throw new ArgumentNullException("tree cannot be null.");
+			if (rank == null)
+				throw new ArgumentNullException("rank cannot be null.");
 			if (account == null)
-				return null;
+				throw new ArgumentNullException("account cannot be null.");
 
-			Money curleft = rank.FindNext().Cost() - account.Balance;
-			var parsers = new Dictionary<string, object>()
+			Money remainder = 0;
+			var replacements = new Dictionary<string, object>();
+
+			#region Old Tags
+			replacements.Add("%CUR_INDEX%", rank.GetIndex(tree) + 1);
+			replacements.Add("%CUR_NAME%", rank.name);
+			replacements.Add("%CUR_GROUP%", rank.group);
+			replacements.Add("%CUR_PARENT%", rank.parentgroup);
+			replacements.Add("%CUR_COST%", rank.Cost().ToLongString());
+			replacements.Add("%MAX%", tree.Count);
+			if (!Utils.IsLastRankInLine(rank, tree))
 			{
-				{"%CUR_INDEX%", (rank.GetIndex(tree) + 1)},
-				{"%CUR_NAME%", rank.name},
-				{"%CUR_GROUP%", rank.group},
-				{"%CUR_PARENT%", rank.parentgroup},
-				{"%CUR_COST%", rank.Cost().ToLongString()},
-				{"%MAX%", tree.Count.ToString()},
-				{"%NEXT_INDEX%", (rank.FindNext().GetIndex(tree) + 1)},
-				{"%NEXT_NAME%", rank.FindNext().name},
-				{"%NEXT_GROUP%", rank.FindNext().group},
-				{"%NEXT_COST%", rank.FindNext().Cost().ToLongString()},
-				{"%CURLEFT%", curleft.ToLongString(true)},
-				{"%BALANCE%", account.Balance.ToLongString(true)}
+				replacements.Add("%NEXT_INDEX%", rank.FindNext().GetIndex(tree) + 1);
+				replacements.Add("%NEXT_NAME%", rank.FindNext().name);
+				replacements.Add("%NEXT_GROUP%", rank.FindNext().group);
+
+				remainder = rank.FindNext().Cost() - account.Balance;
+				replacements.Add("%CURLEFT%", remainder.ToLongString(true));
+			}
+			replacements.Add("%BALANCE%", account.Balance.ToLongString(true));
+			#endregion
+
+			#region New Replacement System
+			replacements.Add("$rankindex", rank.GetIndex(tree) + 1);
+			replacements.Add("$rankname", rank.name);
+			replacements.Add("$rankgroup", rank.group);
+			replacements.Add("$rankparent", rank.parentgroup);
+			replacements.Add("$rankcost", rank.Cost().ToLongString());
+			replacements.Add("$rankcount", tree.Count);
+			if (!Utils.IsLastRankInLine(rank, tree))
+			{
+				replacements.Add("$nextindex", rank.FindNext().GetIndex(tree) + 1);
+				replacements.Add("$nextname", rank.FindNext().name);
+				replacements.Add("$nextgroup", rank.FindNext().group);
+
+				remainder = rank.FindNext().Cost() - account.Balance;
+				replacements.Add("$remainder", remainder.ToLongString(true));
+			}
+			replacements.Add("$balance", account.Balance.ToLongString(true));
+			#endregion
+
+			//var parsers = new Dictionary<string, object>()
+			//{
+			//	{"%CUR_INDEX%", (rank.GetIndex(tree) + 1)},
+			//	{"%CUR_NAME%", rank.name},
+			//	{"%CUR_GROUP%", rank.group},
+			//	{"%CUR_PARENT%", rank.parentgroup},
+			//	{"%CUR_COST%", rank.Cost().ToLongString()},
+			//	{"%MAX%", tree.Count.ToString()},
+			//	{"%NEXT_INDEX%", rank.FindNext() != null ? (rank.FindNext().GetIndex(tree) + 1).ToString() : ""},
+			//	{"%NEXT_NAME%", rank.FindNext().name},
+			//	{"%NEXT_GROUP%", rank.FindNext().group},
+			//	{"%NEXT_COST%", rank.FindNext().Cost().ToLongString()},
+			//	{"%CURLEFT%", curleft.ToLongString(true)},
+			//	{"%BALANCE%", account.Balance.ToLongString(true)}
 				
-			};
+			//};
 
-			string parsed = msg;
+			string parsed = message;
 
-			foreach (var wc in parsers)
+			foreach (var wc in replacements)
 			{
 				try
 				{
@@ -75,7 +128,7 @@ namespace AutoRank
 				}
 			}
 
-			return Tuple.Create<string, Money>(parsed, curleft);
+			return Tuple.Create<string, Money>(parsed, remainder);
 		}
 
 		public static Tuple<string, Money> ParseRankTree(List<Rank> tree, int index, IBankAccount account)
@@ -85,8 +138,20 @@ namespace AutoRank
 				return null;
 
 			Rank rank = tree[index];
-			return Parse((Utils.IsLastRankInLine(rank, tree) ? AutoRank.Config.MaxRankMsg :
-				AutoRank.Config.RankCmdMsg), tree, rank, account);
+			try
+			{
+				return Parse((Utils.IsLastRankInLine(rank, tree) ? AutoRank.Config.MaxRankMsg :
+					AutoRank.Config.RankCmdMsg), tree, rank, account);
+			}
+			catch (ArgumentNullException ex)
+			{
+				return new Tuple<string, Money>(ex.Message, new Money());
+			}
+			catch (Exception ex)
+			{
+				Log.ConsoleError(ex.ToString());
+				return null;
+			}
 		}
 
 		public static string ParseCommand(string cmd, TSPlayer plr)

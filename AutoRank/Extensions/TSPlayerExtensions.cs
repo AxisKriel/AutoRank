@@ -21,18 +21,28 @@ namespace AutoRank.Extensions
 			return AutoRank.Config.Ranks.Find((rank) => rank.Group() == player.Group);
 		}
 
-		private static void RankUp(TSPlayer player, Rank rank)
+		private static void RankUp(TSPlayer player, Rank rank, bool silent = false)
 		{
+			bool debug = true;
+
 			try
 			{
 				if (player == null)
 					throw new NullReferenceException("TSPlayer object cannot be null.");
 				if (rank == null)
 					throw new NullReferenceException("Rank object cannot be null.");
+				if (rank.Group() == null)
+					throw new NullReferenceException("Group object cannot be null.");
 
 				rank.PerformCommands(player);
-				TShock.Users.SetUserGroup(TShock.Users.GetUserByID(player.UserID), rank.Group().Name);
-				player.SendSuccessMessage(MsgParser.Parse(AutoRank.Config.RankUpMessage, player, rank));
+				if (!silent)
+				{
+					TShock.Users.SetUserGroup(TShock.Users.GetUserByID(player.UserID), rank.Group().Name);
+					player.SendSuccessMessage(MsgParser.Parse(AutoRank.Config.RankUpMessage, player, rank));
+				}
+
+				if (debug)
+					Log.ConsoleInfo("[AutoRank] Ranked '{0}' to '{1}' (silent: {2})".SFormat(player.Name, rank.name, silent));
 			}
 			catch (Exception ex)
 			{
@@ -44,22 +54,52 @@ namespace AutoRank.Extensions
 
 		public static Task RankUpAsync(this TSPlayer player, Rank rank)
 		{
-			return Task.Factory.StartNew(() => RankUp(player, rank));
+			return Task.Run(() => RankUp(player, rank));
 		}
 
-		public static Task RankUpAsync(this TSPlayer player, List<Rank> line)
+		public static async Task RankUpAsync(this TSPlayer player, List<Rank> line)
 		{
-			return Task.Factory.StartNew(() =>
-				{
-					if (line.Count < 1)
-						return;
+			if (line.Count < 1)
+				return;
 
-					foreach (Rank rank in new List<Rank>(line.Where(r => r != line.Last())))
-					{
-						rank.PerformCommands(player);
-					}
-					RankUp(player, line.Last());
-				});
+			Money cost = 0;
+			for (int i = 0; i < line.Count; i++)
+			{
+				cost += line[i].Cost();
+			}
+
+			if (SEconomyPlugin.Instance == null)
+				return;
+
+			IBankAccount account = SEconomyPlugin.Instance.GetBankAccount(player);
+			if (account != null && SEconomyPlugin.Instance.WorldAccount != null)
+			{
+				Money balance = account.Balance;
+				var task = await account.TransferToAsync(SEconomyPlugin.Instance.WorldAccount, cost,
+					BankAccountTransferOptions.SuppressDefaultAnnounceMessages, "",
+					"{0} paid {1} to rank up with AutoRank.".SFormat(player.UserAccountName, cost));
+
+				if (!task.TransferSucceeded)
+				{
+					// Returning the money; This transaction may fail, but I see no other way.
+						await SEconomyPlugin.Instance.WorldAccount.TransferToAsync(account,
+							balance - account.Balance, BankAccountTransferOptions.SuppressDefaultAnnounceMessages,
+							"", "");
+					player.SendErrorMessage(
+						"Your transaction could not be completed. Start a new transaction to retry.");
+					return;
+				}
+			}
+			else
+				player.SendErrorMessage("Invalid bank account!");
+
+			for (int i = 0; i < line.Count; i++)
+			{
+				if (i == line.Count - 1)
+					RankUp(player, line[i], false);
+				else
+					RankUp(player, line[i], true);
+			}
 		}
 	}
 }

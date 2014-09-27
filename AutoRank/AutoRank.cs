@@ -5,6 +5,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using System.Timers;
+using Terraria;
 using TerrariaApi.Server;
 using TShockAPI;
 using Wolfje.Plugins.SEconomy;
@@ -13,65 +14,54 @@ using Wolfje.Plugins.SEconomy.Journal;
 namespace AutoRank
 {
 	[ApiVersion(1, 16)]
-    public class AutoRank : TerrariaPlugin
-    {
+	public class AutoRank : TerrariaPlugin
+	{
 		public static Config Config { get; set; }
-
-		public override Version Version
-		{
-			get
-			{
-				return System.Reflection.Assembly.GetExecutingAssembly().GetName().Version;
-			}
-		}
-		public override string Name
-		{
-			get
-			{
-				return "AutoRank";
-			}
-		}
 
 		public override string Author
 		{
-			get
-			{
-				return "Enerdy";
-			}
+			get { return "Enerdy"; }
 		}
 
 		public override string Description
 		{
-			get
-			{
-				return "Auto-ranking system for Wolfje's SEconomy plugin.";
-			}
+			get { return "Auto-ranking system for Wolfje's SEconomy plugin."; }
 		}
 
-		public override void Initialize()
+		public override string Name
 		{
-			Config = Config.Read();
-			Utils.WriteFiles();
+			get { return "AutoRank"; }
+		}
 
-			ServerApi.Hooks.GameInitialize.Register(this, OnInitialize);
-
-			Commands.ChatCommands.Add(new Command(RankCheck, Config.RankCmdAlias));
-			Commands.ChatCommands.Add(new Command("autorank.reload", Reload, "rank-reload"));
-			
+		public override Version Version
+		{
+			get { return System.Reflection.Assembly.GetExecutingAssembly().GetName().Version; }
 		}
 
 		protected override void Dispose(bool disposing)
 		{
 			if (disposing)
 			{
+				SEconomyPlugin.SEconomyLoaded -= SEconomyLoaded;
+				SEconomyPlugin.SEconomyUnloaded -= SEconomyUnloaded;
 				ServerApi.Hooks.GameInitialize.Deregister(this, OnInitialize);
-				if (SEconomyPlugin.Instance != null)
-					SEconomyPlugin.Instance.RunningJournal.BankTransferCompleted -= BankTransferCompleted;
 			}
-			base.Dispose(disposing);
 		}
 
-		public AutoRank(Terraria.Main game)
+		public override void Initialize()
+		{
+			if (SEconomyPlugin.Instance != null)
+			{
+				SEconomyPlugin.SEconomyLoaded += SEconomyLoaded;
+				SEconomyPlugin.SEconomyUnloaded += SEconomyUnloaded;
+				
+				// Initial hooking, as SEconomyLoaded has already been called
+				SEconomyPlugin.Instance.RunningJournal.BankTransferCompleted += BankTransferCompleted;
+			}
+			ServerApi.Hooks.GameInitialize.Register(this, OnInitialize);
+		}
+
+		public AutoRank(Main game)
 			: base(game)
 		{
 			Order = 20001;
@@ -79,77 +69,87 @@ namespace AutoRank
 
 		void OnInitialize(EventArgs e)
 		{
-			if (SEconomyPlugin.Instance != null)
-				SEconomyPlugin.Instance.RunningJournal.BankTransferCompleted += BankTransferCompleted;
+			#region Config
+			Config = Config.Read();
+			Utils.WriteFiles();
+			#endregion
+			#region Commands
+			Commands.ChatCommands.Add(new Command(RankCheck, Config.RankCmdAlias));
+			Commands.ChatCommands.Add(new Command("autorank.reload", Reload, "rank-reload"));
+			#endregion
 		}
 
-		async void BankTransferCompleted(object sender, BankTransferEventArgs args)
+		async void BankTransferCompleted(object sender, BankTransferEventArgs e)
 		{
-			try
+			// Null check the instance - Thanks Wolfje
+			if (SEconomyPlugin.Instance == null)
+				return;
+
+			// The world account does not have a rank
+			if (e.ReceiverAccount == null ||
+				!e.ReceiverAccount.IsAccountEnabled ||
+				e.ReceiverAccount.IsSystemAccount ||
+				SEconomyPlugin.Instance.WorldAccount == null)
+				return;
+
+			// Stop chain transfers
+			if (e.TransferOptions.HasFlag(BankAccountTransferOptions.SuppressDefaultAnnounceMessages))
+				return;
+
+			TSPlayer ply = TShock.Players.FirstOrDefault(p => p != null && p.Active && p.IsLoggedIn &&
+				p.UserAccountName == e.ReceiverAccount.UserAccountName);
+			if (ply == null)
+				return;
+
+			var rank = ply.GetRank();
+			if (rank != null)
 			{
-				// Null check the instance - Thanks Wolfje
-				if (SEconomyPlugin.Instance == null)
-					return;
-
-				// The world account does not have a rank
-				if (args.ReceiverAccount == null ||
-					!args.ReceiverAccount.IsAccountEnabled ||
-					args.ReceiverAccount.IsSystemAccount ||
-					SEconomyPlugin.Instance.WorldAccount == null)
-					return;
-
-				TSPlayer ply = TShock.Players.FirstOrDefault(p => p != null && p.IsLoggedIn &&
-					p.UserAccountName.Equals(args.ReceiverAccount.UserAccountName, StringComparison.OrdinalIgnoreCase));
-				if (ply == null)
-					return;
-
-				var rank = ply.GetRank();
-				if (rank != null)
+				var ranks = rank.FindNextRanks(e.ReceiverAccount.Balance);
+				if (ranks != null && ranks.Count > 0)
 				{
-					var ranks = rank.FindNextRanks(args.ReceiverAccount.Balance);
-					if (ranks.Count > 0)
-					{
-						Money cost = 0L;
-						foreach (Rank rk in ranks)
-						{
-							cost += rk.Cost();
-						}
-						var task = await args.ReceiverAccount.TransferToAsync(SEconomyPlugin.Instance.WorldAccount, cost,
-							BankAccountTransferOptions.SuppressDefaultAnnounceMessages, String.Empty,
-							String.Format("{0} paid {1} to rank up with AutoRank.", ply.Name, cost.ToString()));
-						if (!task.TransferSucceeded)
-						{
-							if (task.Exception != null)
-							{
-								Log.ConsoleError("SEconomy Exception: " + task.Exception.Message);
-								Log.ConsoleError(task.Exception.ToString());
-							}
-							ply.SendErrorMessage(
-								"Your transaction could not be completed. Start a new transaction to retry.");
-							return;
-						}
-						await ply.RankUpAsync(ranks);
-						//Task.Factory.StartNew(await args.ReceiverAccount.TransferToAsync(SEconomyPlugin.Instance.WorldAccount, cost,
-						//	BankAccountTransferOptions.None, String.Empty,
-						//	String.Format("{0} paid {1} to rank up with AutoRank.", ply.Name,
-						//	cost.ToString())) }); .ContinueWith((task) =>
-						//		{
-						//			if (!task.Result.TransferSucceeded)
-						//			{
-						//				ply.SendErrorMessage(
-						//					"Your transaction could not be completed. Start a new transaction to retry.");
-						//				return;
-						//			}
-						//			ply.RankUpAsync(ranks);
-						//		});
-					}
+					//Money cost = 0L;
+					//foreach (Rank rk in ranks)
+					//{
+					//	cost += rk.Cost();
+					//}
+
+					//Money balance = e.ReceiverAccount.Balance;
+					//var task = await e.ReceiverAccount.TransferToAsync(SEconomyPlugin.Instance.WorldAccount, cost,
+					//	BankAccountTransferOptions.SuppressDefaultAnnounceMessages, "",
+					//	String.Format("{0} paid {1} to rank up with AutoRank.", ply.Name, cost.ToString()));
+					//if (!task.TransferSucceeded)
+					//{
+					//	if (task.Exception != null)
+					//	{
+					//		Log.ConsoleError("SEconomy Exception: {0}\nCheck logs for details.", task.Exception.Message);
+					//		Log.Error(task.Exception.ToString());
+					//	}
+
+					//	// Returning the money; This transaction may fail, but I see no other way.
+					//	await SEconomyPlugin.Instance.WorldAccount.TransferToAsync(e.ReceiverAccount,
+					//		balance - e.ReceiverAccount.Balance, BankAccountTransferOptions.SuppressDefaultAnnounceMessages,
+					//		"", "");
+					//	ply.SendErrorMessage(
+					//		"Your transaction could not be completed. Start a new transaction to retry.");
+					//}
+					//else
+
+					await ply.RankUpAsync(ranks);
+
+					//Task.Factory.StartNew(await args.ReceiverAccount.TransferToAsync(SEconomyPlugin.Instance.WorldAccount, cost,
+					//	BankAccountTransferOptions.None, String.Empty,
+					//	String.Format("{0} paid {1} to rank up with AutoRank.", ply.Name,
+					//	cost.ToString())) }); .ContinueWith((task) =>
+					//		{
+					//			if (!task.Result.TransferSucceeded)
+					//			{
+					//				ply.SendErrorMessage(
+					//					"Your transaction could not be completed. Start a new transaction to retry.");
+					//				return;
+					//			}
+					//			ply.RankUpAsync(ranks);
+					//		});
 				}
-			}
-			catch (Exception ex)
-			{
-				Log.ConsoleError("[AutoRank] Exception at 'BankTransferCompleted': {0}\nCheck logs for details.",
-					ex.Message);
-				Log.Error(ex.ToString());
 			}
 		}
 
@@ -197,6 +197,18 @@ namespace AutoRank
 		{
 			Config = Config.Read();
 			args.Player.SendSuccessMessage("[AutoRank] Reloaded config!");
+		}
+
+		void SEconomyLoaded(object sender, EventArgs e)
+		{
+			if (SEconomyPlugin.Instance != null)
+				SEconomyPlugin.Instance.RunningJournal.BankTransferCompleted += BankTransferCompleted;
+		}
+
+		void SEconomyUnloaded(object sender, EventArgs e)
+		{
+			if (SEconomyPlugin.Instance != null)
+				SEconomyPlugin.Instance.RunningJournal.BankTransferCompleted -= BankTransferCompleted;
 		}
 	}
 }

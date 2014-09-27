@@ -44,8 +44,7 @@ namespace AutoRank
 
 		public static Config Read()
 		{
-			if (!Directory.Exists(savepath))
-				Directory.CreateDirectory(savepath);
+			Directory.CreateDirectory(savepath);
 
 			Config file = new Config();
 			try

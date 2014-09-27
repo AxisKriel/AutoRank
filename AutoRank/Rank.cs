@@ -49,29 +49,22 @@ namespace AutoRank
 
 		public List<Rank> FindNextRanks(Money value)
 		{
+			// Value can't be negative or zero
+			if (value <= 0)
+				return null;
+
+			var ranks = Utils.MakeRankTree(this);
+
+			Money cost = 0;
 			var list = new List<Rank>();
-			long stack = 0L;
-			var rank = this;
-			Rank nextRank;
-			while (true)
+			for (int i = this.GetIndex(ranks) + 1; i < ranks.Count; i++)
 			{
-				nextRank = rank.FindNext();
-				if (nextRank == null || nextRank.Cost() == 0L)
+				cost += ranks[i].Cost();
+				if (cost > value)
 					break;
-				stack += nextRank.Cost();
-				if (stack > value)
-					break;
-				list.Add(nextRank);
+				list.Add(ranks[i]);
 			}
 			return list;
-		}
-
-		public bool GroupExists()
-		{
-			if (this.Group() == null)
-				return false;
-			else
-				return true;
 		}
 
 		public void PerformCommands(TSPlayer ply)
@@ -83,7 +76,6 @@ namespace AutoRank
 			string text;
 			List<string> args;
 			Command cmd;
-			string cmdText;
 			foreach (string str in levelupcommands)
 			{
 				text = MsgParser.ParseCommand(str, ply);

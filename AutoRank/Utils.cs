@@ -83,10 +83,7 @@ If you have any wildcard that you'd like to see added, please submit your reques
 
 		public static bool IsLastRankInLine(Rank rank, List<Rank> line)
 		{
-			if (rank != null && line != null && rank == line.Last())
-				return true;
-			else
-				return false;
+			return rank.FindNext() == null;
 		}
 
 		public static List<string> ParseParameters(string text)

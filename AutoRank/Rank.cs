@@ -39,7 +39,7 @@ namespace AutoRank
 
 		public Money Cost()
 		{
-			return Money.Parse(cost);
+			return cost == null ? new Money() : Money.Parse(cost);
 		}
 
 		public Rank FindNext()

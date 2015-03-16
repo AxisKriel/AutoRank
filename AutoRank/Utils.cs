@@ -73,10 +73,10 @@ If you have any wildcard that you'd like to see added, please submit your reques
 			}
 			catch (ArgumentOutOfRangeException ex)
 			{
-				Log.ConsoleError(
-					"[AutoRank] ArgumentOutOfRangeException at 'MakeRankTree': {0}\nCheck logs for details.",
-					ex.Message);
-				Log.Error(ex.ToString());
+				TShock.Log.ConsoleError(
+						"[AutoRank] ArgumentOutOfRangeException at 'MakeRankTree': {0}\nCheck logs for details.",
+						ex.Message);
+				TShock.Log.Error(ex.ToString());
 				return null;
 			}
 		}

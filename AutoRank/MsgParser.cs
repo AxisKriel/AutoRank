@@ -107,7 +107,7 @@ namespace AutoRank
 			//	{"%NEXT_COST%", rank.FindNext().Cost().ToLongString()},
 			//	{"%CURLEFT%", curleft.ToLongString(true)},
 			//	{"%BALANCE%", account.Balance.ToLongString(true)}
-				
+
 			//};
 
 			string parsed = message;
@@ -121,10 +121,10 @@ namespace AutoRank
 				}
 				catch (Exception ex)
 				{
-					Log.ConsoleError(
-						"[AutoRank] Exception at 'MsgParser.Parse2': {0}\nCheck logs for details.",
-						ex.Message);
-					Log.Error(ex.ToString());
+					TShock.Log.ConsoleError(
+							"[AutoRank] Exception at 'MsgParser.Parse2': {0}\nCheck logs for details.",
+							ex.Message);
+					TShock.Log.Error(ex.ToString());
 				}
 			}
 
@@ -149,7 +149,7 @@ namespace AutoRank
 			}
 			catch (Exception ex)
 			{
-				Log.ConsoleError(ex.ToString());
+				TShock.Log.ConsoleError(ex.ToString());
 				return null;
 			}
 		}

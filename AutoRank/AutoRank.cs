@@ -13,7 +13,7 @@ using Wolfje.Plugins.SEconomy.Journal;
 
 namespace AutoRank
 {
-	[ApiVersion(1, 16)]
+	[ApiVersion(1, 17)]
 	public class AutoRank : TerrariaPlugin
 	{
 		public static Config Config { get; set; }
@@ -54,7 +54,7 @@ namespace AutoRank
 			{
 				SEconomyPlugin.SEconomyLoaded += SEconomyLoaded;
 				SEconomyPlugin.SEconomyUnloaded += SEconomyUnloaded;
-				
+
 				// Initial hooking, as SEconomyLoaded has already been called
 				SEconomyPlugin.Instance.RunningJournal.BankTransferCompleted += BankTransferCompleted;
 			}

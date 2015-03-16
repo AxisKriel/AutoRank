@@ -42,13 +42,13 @@ namespace AutoRank.Extensions
 				}
 
 				if (debug)
-					Log.ConsoleInfo("[AutoRank] Ranked '{0}' to '{1}' (silent: {2})".SFormat(player.Name, rank.name, silent));
+					TShock.Log.ConsoleInfo("[AutoRank] Ranked '{0}' to '{1}' (silent: {2})".SFormat(player.Name, rank.name, silent));
 			}
 			catch (Exception ex)
 			{
-				Log.ConsoleError("[SBPlanet Package] Exception at 'RankUp': {0}\nCheck logs for details.",
-					ex.Message);
-				Log.Error(ex.ToString());
+				TShock.Log.ConsoleError("[SBPlanet Package] Exception at 'RankUp': {0}\nCheck logs for details.",
+						ex.Message);
+				TShock.Log.Error(ex.ToString());
 			}
 		}
 
@@ -82,9 +82,9 @@ namespace AutoRank.Extensions
 				if (!task.TransferSucceeded)
 				{
 					// Returning the money; This transaction may fail, but I see no other way.
-						await SEconomyPlugin.Instance.WorldAccount.TransferToAsync(account,
-							balance - account.Balance, BankAccountTransferOptions.SuppressDefaultAnnounceMessages,
-							"", "");
+					await SEconomyPlugin.Instance.WorldAccount.TransferToAsync(account,
+						balance - account.Balance, BankAccountTransferOptions.SuppressDefaultAnnounceMessages,
+						"", "");
 					player.SendErrorMessage(
 						"Your transaction could not be completed. Start a new transaction to retry.");
 					return;

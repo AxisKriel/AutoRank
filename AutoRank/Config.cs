@@ -36,9 +36,9 @@ namespace AutoRank
 			}
 			catch (Exception ex)
 			{
-				Log.ConsoleError("[AutoRank] Exception at 'Config.Write': {0}\nCheck logs for details.",
-					ex.Message);
-				Log.Error(ex.ToString());
+				TShock.Log.ConsoleError("[AutoRank] Exception at 'Config.Write': {0}\nCheck logs for details.",
+						ex.Message);
+				TShock.Log.Error(ex.ToString());
 			}
 		}
 
@@ -60,9 +60,9 @@ namespace AutoRank
 			}
 			catch (Exception ex)
 			{
-				Log.ConsoleError("[AutoRank] Exception at 'Config.Read': {0}\nCheck logs for details.",
-					ex.Message);
-				Log.Error(ex.ToString());
+				TShock.Log.ConsoleError("[AutoRank] Exception at 'Config.Read': {0}\nCheck logs for details.",
+						ex.Message);
+				TShock.Log.Error(ex.ToString());
 			}
 			return file;
 		}

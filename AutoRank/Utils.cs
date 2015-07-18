@@ -19,21 +19,21 @@ RankUpMessage avaliable wildcards:
 %PARENT% - The player's new Group ParentName [I. E. the rank they previously had] (From TSHOCK)
 
 RankCmdMsg & MaxRankMsg available wildcards:
-%CUR_<branch>% - The current rank. Must use one of the following branches:
-					-> %CUR_INDEX% - The index in the rank tree. [Natural-based: starts at 1]
-					-> %CUR_NAME% - The name attribute.
-					-> %CUR_GROUP% - The TShock group's name.
-					-> %CUR_PARENT% - The parentgroup attribute.
-					-> %CUR_COST% - The cost attribute parsed as SEconomy Money.ToLongString(true).
-%NEXT_<branch>% - The next rank. Must use one of the following branches:
-					-> %NEXT_INDEX% - The index in the rank tree. [Natural-based: starts at 1]
-					-> %NEXT_NAME% - The name attribute.
-					-> %NEXT_GROUP% - The TShock group's name.
-					[No need for %NEXT_PARENT% since that's pretty much '%CUR_NAME%']
-					-> %NEXT_COST% - The cost attribute parsed as SEconomy Money.ToLongString(true).
-%MAX% - The number of ranks in the rank tree.
-%CURLEFT% - The currency left to reach the next rank (NextRank's cost - Player Bank Account's balance)
-%BALANCE% - The player's balance parsed as SEconomy Money.ToLongString(true).
+The tokens below refer to the player's current rank.
+					-> $rankindex - The index in the rank tree. [Natural-based: starts at 1]
+					-> $rankname - The name attribute.
+					-> $rankgroup - The TShock group's name.
+					-> $rankparent - The parentgroup attribute.
+					-> $rankcost - The cost attribute parsed as SEconomy Money.ToLongString(false).
+The tokens below refer to the player's next rank in the tree.
+					-> $nextindex - The index in the rank tree. [Natural-based: starts at 1]
+					-> $nextname - The name attribute.
+					-> $nextgroup - The TShock group's name.
+					[No need for '$nextparent' since that's pretty much '$rankname']
+					-> $nextcost - The cost attribute parsed as SEconomy Money.ToLongString(false).
+$rankcount - The number of ranks in the rank tree.
+$remainder - The currency left to reach the next rank (NextRank's cost - Player Bank Account's balance)
+$balance - The player's balance parsed as SEconomy Money.ToLongString(true).
 
 levelupcommands available wildcards:
 %PLAYER_<obj>% - Returns information regarding the player who just ranked up. Use one of the following as <obj>:

@@ -13,7 +13,7 @@ using Wolfje.Plugins.SEconomy.Journal;
 
 namespace AutoRank
 {
-	[ApiVersion(1, 17)]
+	[ApiVersion(1, 19)]
 	public class AutoRank : TerrariaPlugin
 	{
 		public static Config Config { get; set; }
@@ -97,7 +97,7 @@ namespace AutoRank
 				return;
 
 			TSPlayer ply = TShock.Players.FirstOrDefault(p => p != null && p.Active && p.IsLoggedIn &&
-				p.UserAccountName == e.ReceiverAccount.UserAccountName);
+				p.User.Name == e.ReceiverAccount.UserAccountName);
 			if (ply == null)
 				return;
 

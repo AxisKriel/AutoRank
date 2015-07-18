@@ -16,8 +16,8 @@ namespace AutoRank
 
 		public string RankUpMessage = "[AutoRank] You've been auto-ranked to %GROUP%!";
 		public string RankCmdAlias = "rank";
-		public string RankCmdMsg = "[%CUR_INDEX%/%MAX%] Current Rank: %CUR_NAME%. Next rank in %CURLEFT%.";
-		public string MaxRankMsg = "[%CUR_INDEX%/%MAX%] Current Rank: %CUR_NAME%.";
+		public string RankCmdMsg = "[$rankindex/$rankcount] Current Rank: $rankname. Next rank in $remainder.";
+		public string MaxRankMsg = "[$rankindex/$rankcount] Current Rank: $rankname.";
 		public List<Rank> Ranks = new List<Rank>()
 		{
 			new Rank("TestRank")

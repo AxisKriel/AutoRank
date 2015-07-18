@@ -87,7 +87,10 @@ namespace AutoRank
 				replacements.Add("$nextname", rank.FindNext().name);
 				replacements.Add("$nextgroup", rank.FindNext().group);
 
-				remainder = rank.FindNext().Cost() - account.Balance;
+				Money cost = rank.FindNext().Cost();
+				replacements.Add("$nextcost", cost.ToLongString());
+
+				remainder = cost - account.Balance;
 				replacements.Add("$remainder", remainder.ToLongString(true));
 			}
 			replacements.Add("$balance", account.Balance.ToLongString(true));

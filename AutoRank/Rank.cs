@@ -5,7 +5,6 @@ using System.Text;
 using System.Threading.Tasks;
 using TShockAPI;
 using Wolfje.Plugins.SEconomy;
-using Newtonsoft.Json;
 
 namespace AutoRank
 {

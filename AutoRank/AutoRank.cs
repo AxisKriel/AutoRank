@@ -13,7 +13,7 @@ using Wolfje.Plugins.SEconomy.Journal;
 
 namespace AutoRank
 {
-	[ApiVersion(1, 19)]
+	[ApiVersion(1, 22)]
 	public class AutoRank : TerrariaPlugin
 	{
 		public static Config Config { get; set; }

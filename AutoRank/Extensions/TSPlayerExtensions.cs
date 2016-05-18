@@ -37,7 +37,7 @@ namespace AutoRank.Extensions
 				rank.PerformCommands(player);
 				if (!silent)
 				{
-					TShock.Users.SetUserGroup(TShock.Users.GetUserByID(player.UserID), rank.Group().Name);
+					TShock.Users.SetUserGroup(TShock.Users.GetUserByID(player.User.ID), rank.Group().Name);
 					player.SendSuccessMessage(MsgParser.Parse(AutoRank.Config.RankUpMessage, player, rank));
 				}
 
@@ -77,17 +77,20 @@ namespace AutoRank.Extensions
 				Money balance = account.Balance;
 				var task = await account.TransferToAsync(SEconomyPlugin.Instance.WorldAccount, cost,
 					BankAccountTransferOptions.SuppressDefaultAnnounceMessages, "",
-					"{0} paid {1} to rank up with AutoRank.".SFormat(player.UserAccountName, cost));
+					"{0} paid {1} to rank up with AutoRank.".SFormat(player.User.Name, cost));
 
 				if (!task.TransferSucceeded)
 				{
-					// Returning the money; This transaction may fail, but I see no other way.
-					await SEconomyPlugin.Instance.WorldAccount.TransferToAsync(account,
-						balance - account.Balance, BankAccountTransferOptions.SuppressDefaultAnnounceMessages,
-						"", "");
-					player.SendErrorMessage(
-						"Your transaction could not be completed. Start a new transaction to retry.");
+					// After reviewing this, if the transfer didn't go through, there is no need to do anything...
 					return;
+
+					//// Returning the money; This transaction may fail, but I see no other way.
+					//await SEconomyPlugin.Instance.WorldAccount.TransferToAsync(account,
+					//	balance - account.Balance, BankAccountTransferOptions.SuppressDefaultAnnounceMessages,
+					//	"", "");
+					//player.SendErrorMessage(
+					//	"Your transaction could not be completed. Start a new transaction to retry.");
+					//return;
 				}
 			}
 			else

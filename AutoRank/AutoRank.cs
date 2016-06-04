@@ -13,10 +13,12 @@ using Wolfje.Plugins.SEconomy.Journal;
 
 namespace AutoRank
 {
-	[ApiVersion(1, 22)]
+	[ApiVersion(1, 23)]
 	public class AutoRank : TerrariaPlugin
 	{
 		public static Config Config { get; set; }
+
+		internal static bool[] TransactionLock { get; private set; }
 
 		public override string Author
 		{
@@ -65,6 +67,7 @@ namespace AutoRank
 			: base(game)
 		{
 			Order = 20001;
+			TransactionLock = new bool[Main.maxNetPlayers];
 		}
 
 		void OnInitialize(EventArgs e)
@@ -93,7 +96,7 @@ namespace AutoRank
 				return;
 
 			// Stop chain transfers
-			if (e.TransferOptions.HasFlag(BankAccountTransferOptions.SuppressDefaultAnnounceMessages))
+			if (e.TransactionMessage.StartsWith("AutoRank"))
 				return;
 
 			TSPlayer ply = TShock.Players.FirstOrDefault(p => p != null && p.Active && p.IsLoggedIn &&

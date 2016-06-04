@@ -59,6 +59,10 @@ namespace AutoRank.Extensions
 
 		public static async Task RankUpAsync(this TSPlayer player, List<Rank> line)
 		{
+			// Do not attempt new rank-up transactions while this one is going
+			if (AutoRank.TransactionLock[player.Index])
+				return;
+
 			if (line.Count < 1)
 				return;
 
@@ -74,23 +78,16 @@ namespace AutoRank.Extensions
 			IBankAccount account = SEconomyPlugin.Instance.GetBankAccount(player);
 			if (account != null && SEconomyPlugin.Instance.WorldAccount != null)
 			{
+				AutoRank.TransactionLock[player.Index] = true;
 				Money balance = account.Balance;
 				var task = await account.TransferToAsync(SEconomyPlugin.Instance.WorldAccount, cost,
-					BankAccountTransferOptions.SuppressDefaultAnnounceMessages, "",
-					"{0} paid {1} to rank up with AutoRank.".SFormat(player.User.Name, cost));
+					BankAccountTransferOptions.SuppressDefaultAnnounceMessages, "", $"AutoRank ({line[line.Count - 1].name})");
+				AutoRank.TransactionLock[player.Index] = false;
 
 				if (!task.TransferSucceeded)
 				{
 					// After reviewing this, if the transfer didn't go through, there is no need to do anything...
 					return;
-
-					//// Returning the money; This transaction may fail, but I see no other way.
-					//await SEconomyPlugin.Instance.WorldAccount.TransferToAsync(account,
-					//	balance - account.Balance, BankAccountTransferOptions.SuppressDefaultAnnounceMessages,
-					//	"", "");
-					//player.SendErrorMessage(
-					//	"Your transaction could not be completed. Start a new transaction to retry.");
-					//return;
 				}
 			}
 			else

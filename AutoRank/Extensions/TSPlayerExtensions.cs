@@ -23,8 +23,6 @@ namespace AutoRank.Extensions
 
 		private static void RankUp(TSPlayer player, Rank rank, bool silent = false)
 		{
-			bool debug = true;
-
 			try
 			{
 				if (player == null)
@@ -41,8 +39,11 @@ namespace AutoRank.Extensions
 					player.SendSuccessMessage(MsgParser.Parse(AutoRank.Config.RankUpMessage, player, rank));
 				}
 
-				if (debug)
-					TShock.Log.ConsoleInfo("[AutoRank] Ranked '{0}' to '{1}' (silent: {2})".SFormat(player.Name, rank.name, silent));
+#if DEBUG
+				TShock.Log.ConsoleInfo($"[AutoRank] Ranked '{player.Name}' to '{rank.name}' (silent: {silent}).");
+#else
+				TShock.Log.ConsoleError($"[AutoRank] Ranked '{player.Name}' to {rank.name}.");
+#endif
 			}
 			catch (Exception ex)
 			{
@@ -81,7 +82,7 @@ namespace AutoRank.Extensions
 				AutoRank.TransactionLock[player.Index] = true;
 				Money balance = account.Balance;
 				var task = await account.TransferToAsync(SEconomyPlugin.Instance.WorldAccount, cost,
-					BankAccountTransferOptions.SuppressDefaultAnnounceMessages, "", $"AutoRank ({line[line.Count - 1].name})");
+					BankAccountTransferOptions.SuppressDefaultAnnounceMessages, "", $"AutoRank ({String.Join(",", line.Select(r => r.name))})");
 				AutoRank.TransactionLock[player.Index] = false;
 
 				if (!task.TransferSucceeded)

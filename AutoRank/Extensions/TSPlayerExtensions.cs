@@ -42,7 +42,7 @@ namespace AutoRank.Extensions
 #if DEBUG
 				TShock.Log.ConsoleInfo($"[AutoRank] Ranked '{player.Name}' to '{rank.name}' (silent: {silent}).");
 #else
-				TShock.Log.ConsoleError($"[AutoRank] Ranked '{player.Name}' to {rank.name}.");
+				TShock.Log.ConsoleInfo($"[AutoRank] Ranked '{player.Name}' to {rank.name}.");
 #endif
 			}
 			catch (Exception ex)

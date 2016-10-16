@@ -131,7 +131,7 @@ namespace AutoRank
 				}
 			}
 
-			return Tuple.Create<string, Money>(parsed, remainder);
+			return Tuple.Create(parsed, remainder);
 		}
 
 		public static Tuple<string, Money> ParseRankTree(List<Rank> tree, int index, IBankAccount account)

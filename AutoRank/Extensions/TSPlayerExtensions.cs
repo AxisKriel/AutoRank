@@ -36,14 +36,17 @@ namespace AutoRank.Extensions
 				if (!silent)
 				{
 					TShock.Users.SetUserGroup(TShock.Users.GetUserByID(player.User.ID), rank.Group().Name);
-					player.SendSuccessMessage(MsgParser.Parse(AutoRank.Config.RankUpMessage, player, rank));
+					if (!String.IsNullOrWhiteSpace(AutoRank.Config.RankUpMessage))
+						player.SendSuccessMessage(MsgParser.Parse(AutoRank.Config.RankUpMessage, player, rank));
+					if (!String.IsNullOrWhiteSpace(rank.message))
+						player.SendSuccessMessage(MsgParser.Parse(rank.message, player, rank));
 				}
 
-#if DEBUG
+				#if DEBUG
 				TShock.Log.ConsoleInfo($"[AutoRank] Ranked '{player.Name}' to '{rank.name}' (silent: {silent}).");
-#else
+				#else
 				TShock.Log.ConsoleInfo($"[AutoRank] Ranked '{player.Name}' to {rank.name}.");
-#endif
+				#endif
 			}
 			catch (Exception ex)
 			{

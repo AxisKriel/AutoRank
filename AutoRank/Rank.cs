@@ -14,6 +14,7 @@ namespace AutoRank
 		public string parentgroup { get; set; }
 		public string group { get; set; }
 		public string cost { get; set; }
+		public string message { get; set; }
 		public string[] levelupcommands { get; set; }
 
 		public int GetIndex(List<Rank> list)

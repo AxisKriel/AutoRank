@@ -4,6 +4,7 @@
 # User-specific files
 *.suo
 *.user
+*.userprefs
 *.sln.docstates
 
 # Build results
@@ -25,6 +26,7 @@ build/
 *_i.c
 *_p.c
 *.ilk
+*.mdb
 *.meta
 *.obj
 *.pch
